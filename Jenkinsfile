@@ -32,7 +32,10 @@ pipeline {
                 echo "===== WORKSPACE DEBUG ====="
                 pwd
                 ls -la
+                echo "Searching for pom.xml..."
                 find . -name pom.xml
+                echo "Searching for mvnw..."
+                find . -name mvnw
                 '''
             }
         }
@@ -40,9 +43,11 @@ pipeline {
         stage('Build & Test') {
             steps {
                 sh '''
-                chmod +x mvnw
+                echo "===== BUILD & TEST ====="
 
-                ./mvnw clean verify \
+                mvn --version
+
+                mvn clean verify \
                 -Deureka.client.enabled=false \
                 -Dspring.cloud.discovery.enabled=false
                 '''
@@ -55,9 +60,10 @@ pipeline {
                 echo "===== VERIFYING JACOCO ====="
 
                 if [ -f target/site/jacoco/jacoco.xml ]; then
-                    echo "JaCoCo report found"
+                    echo "JaCoCo report found."
                 else
-                    echo "JaCoCo report missing"
+                    echo "JaCoCo report missing!"
+                    find target -name "*.xml"
                     exit 1
                 fi
                 '''
@@ -82,9 +88,7 @@ pipeline {
                         sh '''
                         echo "===== SONARQUBE ANALYSIS ====="
 
-                        chmod +x mvnw
-
-                        ./mvnw \
+                        mvn \
                         org.sonarsource.scanner.maven:sonar-maven-plugin:5.2.0.4988:sonar \
                         -DskipTests \
                         -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
@@ -137,16 +141,13 @@ pipeline {
         stage('Archive Reports') {
             steps {
                 archiveArtifacts(
-                    artifacts: '''
-                    dependency-check-report.csv,
-                    target/site/jacoco/**,
-                    target/surefire-reports/**
-                    ''',
+                    artifacts: 'dependency-check-report.csv,target/site/jacoco/**,target/surefire-reports/**',
                     fingerprint: true,
                     allowEmptyArchive: true
                 )
             }
         }
+
     }
 
     post {
@@ -160,7 +161,7 @@ pipeline {
         }
 
         failure {
-            echo 'FAILED: Check pipeline logs.'
+            echo 'FAILED: Check Jenkins console output.'
         }
 
         always {
