@@ -6,6 +6,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -40,46 +42,23 @@ class FeignAuthInterceptorTest {
     @DisplayName("apply — header forwarding")
     class Apply {
 
-        @Test
-        @DisplayName("should forward Authorization header to Feign template")
-        void forwardsAuthorizationHeader() {
+        @ParameterizedTest(name = "forwards {0} header with value {1}")
+        @CsvSource({
+                "Authorization, Bearer eyJhbGciOiJIUzI1NiJ9.test.sig",
+                "X-User-Id,     user-42",
+                "X-User-Role,   INSTRUCTOR"
+        })
+        @DisplayName("should forward each auth header to the Feign template")
+        void forwardsHeader(String headerName, String headerValue) {
             MockHttpServletRequest request = bindRequest();
-            request.addHeader("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.test.sig");
+            request.addHeader(headerName.trim(), headerValue.trim());
 
             RequestTemplate template = new RequestTemplate();
             interceptor.apply(template);
 
-            assertThat(template.headers().get("Authorization"))
+            assertThat(template.headers().get(headerName.trim()))
                     .isNotNull()
-                    .contains("Bearer eyJhbGciOiJIUzI1NiJ9.test.sig");
-        }
-
-        @Test
-        @DisplayName("should forward X-User-Id header to Feign template")
-        void forwardsUserIdHeader() {
-            MockHttpServletRequest request = bindRequest();
-            request.addHeader("X-User-Id", "user-42");
-
-            RequestTemplate template = new RequestTemplate();
-            interceptor.apply(template);
-
-            assertThat(template.headers().get("X-User-Id"))
-                    .isNotNull()
-                    .contains("user-42");
-        }
-
-        @Test
-        @DisplayName("should forward X-User-Role header to Feign template")
-        void forwardsUserRoleHeader() {
-            MockHttpServletRequest request = bindRequest();
-            request.addHeader("X-User-Role", "INSTRUCTOR");
-
-            RequestTemplate template = new RequestTemplate();
-            interceptor.apply(template);
-
-            assertThat(template.headers().get("X-User-Role"))
-                    .isNotNull()
-                    .contains("INSTRUCTOR");
+                    .contains(headerValue.trim());
         }
 
         @Test
@@ -160,11 +139,10 @@ class FeignAuthInterceptorTest {
         @Test
         @DisplayName("should do nothing when no request context is bound")
         void doesNothing_whenNoRequestContext() {
-            // No RequestContextHolder bound
             RequestContextHolder.resetRequestAttributes();
 
             RequestTemplate template = new RequestTemplate();
-            interceptor.apply(template); // must not throw
+            interceptor.apply(template);
 
             assertThat(template.headers()).isEmpty();
         }

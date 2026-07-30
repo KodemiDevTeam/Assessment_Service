@@ -53,8 +53,9 @@ class S3ServiceImplTest {
 
             String url = s3Service.uploadFile(file);
 
-            assertThat(url).startsWith("https://test-bucket.s3.ap-south-1.amazonaws.com/");
-            assertThat(url).endsWith(".pdf");
+            assertThat(url)
+                    .startsWith("https://test-bucket.s3.ap-south-1.amazonaws.com/")
+                    .endsWith(".pdf");
             verify(s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
         }
 
@@ -99,8 +100,9 @@ class S3ServiceImplTest {
 
             verify(s3Client).putObject(captor.capture(), any(RequestBody.class));
             PutObjectRequest request = captor.getValue();
-            assertThat(request.key()).startsWith("assignments/");
-            assertThat(request.key()).endsWith(".pdf");
+            assertThat(request.key())
+                    .startsWith("assignments/")
+                    .endsWith(".pdf");
             assertThat(request.bucket()).isEqualTo("test-bucket");
         }
 
@@ -127,7 +129,6 @@ class S3ServiceImplTest {
             s3Service.uploadFile(file, "misc");
 
             verify(s3Client).putObject(captor.capture(), any(RequestBody.class));
-            // key should be misc/<uuid> with no dot extension
             assertThat(captor.getValue().key()).startsWith("misc/");
         }
 
@@ -145,7 +146,6 @@ class S3ServiceImplTest {
         @Test
         @DisplayName("should throw FileUploadException when S3 client throws IOException")
         void upload_ioException_throwsFileUploadException() {
-            // Simulate read error by providing a file whose getBytes() will fail
             MockMultipartFile badFile = new MockMultipartFile(
                     "file", "bad.pdf", "application/pdf", "bytes".getBytes()) {
                 @Override
@@ -221,8 +221,8 @@ class S3ServiceImplTest {
             doThrow(new RuntimeException("S3 error"))
                     .when(s3Client).deleteObject(any(DeleteObjectRequest.class));
 
-            // Should silently log and continue, not propagate
             s3Service.deleteFile("assignments/some-file.pdf");
+            // no exception expected — silently logs and continues
         }
     }
 
@@ -272,6 +272,15 @@ class S3ServiceImplTest {
         @DisplayName("should return null when fileKey is blank")
         void getFileUrl_blankKey_returnsNull() {
             assertThat(s3Service.getFileUrl("   ")).isNull();
+        }
+
+        @Test
+        @DisplayName("getFileUrl with folder-prefixed key should include folder in URL")
+        void getFileUrl_withFolderKey_includesFolderInUrl() {
+            String url = s3Service.getFileUrl("submissions/my-file.pdf");
+
+            assertThat(url).isEqualTo(
+                    "https://test-bucket.s3.ap-south-1.amazonaws.com/submissions/my-file.pdf");
         }
     }
 }

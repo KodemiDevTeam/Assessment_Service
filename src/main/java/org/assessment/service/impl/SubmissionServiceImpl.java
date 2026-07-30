@@ -23,7 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -92,7 +91,7 @@ public class SubmissionServiceImpl implements SubmissionService {
                     Review review = reviewRepository.findBySubmissionId(s.getSubmissionId()).orElse(null);
                     return submissionMapper.toResponse(s, review);
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -102,7 +101,7 @@ public class SubmissionServiceImpl implements SubmissionService {
                     Review review = reviewRepository.findBySubmissionId(s.getSubmissionId()).orElse(null);
                     return submissionMapper.toResponse(s, review);
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

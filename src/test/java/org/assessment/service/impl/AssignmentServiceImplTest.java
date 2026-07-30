@@ -443,7 +443,10 @@ class AssignmentServiceImplTest {
         void deleteAssignment_notFound() {
             when(assignmentRepository.findById("missing")).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> assignmentService.deleteAssignment("missing"))
+            // Extract the throwing call into a single-invocation lambda to satisfy Sonar jUnit rule
+            Runnable deleteCall = () -> assignmentService.deleteAssignment("missing");
+
+            assertThatThrownBy(deleteCall::run)
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("Assignment not found with id: missing");
             verify(assignmentRepository, never()).deleteById(anyString());

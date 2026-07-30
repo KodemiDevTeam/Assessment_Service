@@ -71,7 +71,7 @@ class DtoTest {
             r2.setPassMarks(25f);
 
             assertThat(r1).isEqualTo(r2);
-            assertThat(r1.hashCode()).isEqualTo(r2.hashCode());
+            assertThat(r1).hasSameHashCodeAs(r2);
         }
     }
 
@@ -207,7 +207,7 @@ class DtoTest {
             AssignmentResponse r1 = AssignmentResponse.builder().assignmentId("a1").title("T").build();
             AssignmentResponse r2 = AssignmentResponse.builder().assignmentId("a1").title("T").build();
             assertThat(r1).isEqualTo(r2);
-            assertThat(r1.hashCode()).isEqualTo(r2.hashCode());
+            assertThat(r1).hasSameHashCodeAs(r2);
         }
     }
 
@@ -388,5 +388,8 @@ class DtoTest {
 
             assertThat(r.isOverdue()).isTrue();
         }
+    }
+}
+    }
     }
 }

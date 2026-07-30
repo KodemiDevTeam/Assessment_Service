@@ -19,12 +19,13 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AssignmentServiceImpl implements AssignmentService {
+
+    private static final String ASSIGNMENT_NOT_FOUND = "Assignment not found with id: ";
 
     private final AssignmentRepository assignmentRepository;
     private final AssignmentMapper assignmentMapper;
@@ -66,7 +67,7 @@ public class AssignmentServiceImpl implements AssignmentService {
     @Override
     public AssignmentResponse getAssignmentById(String assignmentId) {
         Assignment assignment = assignmentRepository.findById(assignmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Assignment not found with id: " + assignmentId));
+                .orElseThrow(() -> new ResourceNotFoundException(ASSIGNMENT_NOT_FOUND + assignmentId));
         return assignmentMapper.toResponse(assignment);
     }
 
@@ -74,27 +75,27 @@ public class AssignmentServiceImpl implements AssignmentService {
     public List<AssignmentResponse> getAllAssignments() {
         return assignmentRepository.findAll().stream()
                 .map(assignmentMapper::toResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     public List<AssignmentResponse> getAssignmentsByCourse(String courseId) {
         return assignmentRepository.findByCourseId(courseId).stream()
                 .map(assignmentMapper::toResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     public List<AssignmentResponse> getAssignmentsByInstructor(String instructorId) {
         return assignmentRepository.findByCreatedBy(instructorId).stream()
                 .map(assignmentMapper::toResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     public AssignmentResponse updateAssignment(String assignmentId, UpdateAssignmentRequest request, MultipartFile file) {
         Assignment assignment = assignmentRepository.findById(assignmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Assignment not found with id: " + assignmentId));
+                .orElseThrow(() -> new ResourceNotFoundException(ASSIGNMENT_NOT_FOUND + assignmentId));
 
         if (request.getTitle() != null) {
             assignment.setTitle(request.getTitle());
@@ -122,7 +123,6 @@ public class AssignmentServiceImpl implements AssignmentService {
         }
 
         if (file != null && !file.isEmpty()) {
-            // Delete old file if exists
             if (assignment.getAssignmentFileUrl() != null) {
                 s3Service.deleteFile(assignment.getAssignmentFileUrl());
             }
@@ -137,8 +137,9 @@ public class AssignmentServiceImpl implements AssignmentService {
 
     @Override
     public void deleteAssignment(String assignmentId) {
-        assignmentRepository.findById(assignmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Assignment not found with id: " + assignmentId));
-        assignmentRepository.deleteById(assignmentId);
+        // orElseThrow return value must be used — assign to variable to satisfy the check
+        Assignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new ResourceNotFoundException(ASSIGNMENT_NOT_FOUND + assignmentId));
+        assignmentRepository.deleteById(assignment.getAssignmentId());
     }
 }

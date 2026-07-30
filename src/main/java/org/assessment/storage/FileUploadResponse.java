@@ -1,4 +1,8 @@
 package org.assessment.storage;
 
-public class FileUploadResponse {
+/**
+ * Marker interface for file upload responses.
+ * Implementations carry upload metadata (URL, key, size, etc.).
+ */
+public interface FileUploadResponse {
 }

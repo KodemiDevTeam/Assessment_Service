@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -72,7 +71,7 @@ public class ReviewServiceImpl implements ReviewService {
     public List<ReviewResponse> getReviewsByReviewer(String reviewerId) {
         return reviewRepository.findByReviewerId(reviewerId).stream()
                 .map(reviewMapper::toResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

@@ -41,10 +41,13 @@ class GlobalExceptionHandlerTest {
             ResponseEntity<ErrorResponse> response = handler.handleResourceNotFound(ex);
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-            assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().getStatus()).isEqualTo(404);
-            assertThat(response.getBody().getError()).isEqualTo("Not Found");
-            assertThat(response.getBody().getMessage()).isEqualTo("Assignment not found with id: 123");
+            assertThat(response.getBody())
+                    .isNotNull()
+                    .satisfies(body -> {
+                        assertThat(body.getStatus()).isEqualTo(404);
+                        assertThat(body.getError()).isEqualTo("Not Found");
+                        assertThat(body.getMessage()).isEqualTo("Assignment not found with id: 123");
+                    });
         }
 
         @Test
@@ -141,9 +144,10 @@ class GlobalExceptionHandlerTest {
             ResponseEntity<ErrorResponse> response = handler.handleMethodArgumentNotValid(ex);
 
             String msg = response.getBody().getMessage();
-            assertThat(msg).contains("Title required");
-            assertThat(msg).contains("PassMarks required");
-            assertThat(msg).contains(",");
+            assertThat(msg)
+                    .contains("Title required")
+                    .contains("PassMarks required")
+                    .contains(",");
         }
     }
 
@@ -185,7 +189,6 @@ class GlobalExceptionHandlerTest {
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
             assertThat(response.getBody().getStatus()).isEqualTo(500);
             assertThat(response.getBody().getError()).isEqualTo("Internal Server Error");
-            // message is always the generic safe string, not the raw exception message
             assertThat(response.getBody().getMessage()).isEqualTo("Something went wrong");
         }
 

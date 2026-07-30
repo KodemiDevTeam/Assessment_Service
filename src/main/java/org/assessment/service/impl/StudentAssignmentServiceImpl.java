@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,14 +31,14 @@ public class StudentAssignmentServiceImpl implements StudentAssignmentService {
         // Get all published assignments (student sees all published ones for their courses)
         return assignmentRepository.findAll().stream()
                 .map(a -> buildStudentAssignmentResponse(a, studentId))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
     public List<StudentAssignmentResponse> getMyAssignmentsByStatus(String studentId, SubmissionStatus status) {
         return getMyAssignments(studentId).stream()
                 .filter(r -> status == null || status == r.getSubmissionStatus())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

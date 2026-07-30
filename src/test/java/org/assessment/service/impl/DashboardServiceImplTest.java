@@ -25,8 +25,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -109,10 +107,10 @@ class DashboardServiceImplTest {
 
             DashboardResponse response = dashboardService.getInstructorDashboard(INSTRUCTOR_ID);
 
-            assertThat(response.getTotalAssignments()).isEqualTo(0L);
-            assertThat(response.getTotalSubmissions()).isEqualTo(0L);
-            assertThat(response.getPendingReviews()).isEqualTo(0L);
-            assertThat(response.getGradedSubmissions()).isEqualTo(0L);
+            assertThat(response.getTotalAssignments()).isZero();
+            assertThat(response.getTotalSubmissions()).isZero();
+            assertThat(response.getPendingReviews()).isZero();
+            assertThat(response.getGradedSubmissions()).isZero();
         }
 
         @Test
@@ -128,7 +126,7 @@ class DashboardServiceImplTest {
             DashboardResponse response = dashboardService.getInstructorDashboard(INSTRUCTOR_ID);
 
             assertThat(response.getPendingReviews()).isEqualTo(1L);
-            assertThat(response.getGradedSubmissions()).isEqualTo(0L);
+            assertThat(response.getGradedSubmissions()).isZero();
         }
 
         @Test
@@ -148,7 +146,7 @@ class DashboardServiceImplTest {
 
             assertThat(response.getTotalSubmissions()).isEqualTo(2L);
             assertThat(response.getGradedSubmissions()).isEqualTo(2L);
-            assertThat(response.getPendingReviews()).isEqualTo(0L);
+            assertThat(response.getPendingReviews()).isZero();
         }
     }
 
@@ -176,8 +174,6 @@ class DashboardServiceImplTest {
                     .reviewId("rev-002").submissionId("sub-002")
                     .marksAwarded(40f).resultStatus(ResultStatus.FAIL).build();
 
-            // Both assignments have future due dates so the overdue branch filter
-            // (a.getDueDate().isBefore(now)) is false — findByAssignmentIdAndLearnerId won't be called.
             when(assignmentRepository.findAll()).thenReturn(List.of(assignment1, assignment2));
             when(submissionRepository.findByLearnerId(STUDENT_ID)).thenReturn(List.of(sub1, sub2));
             when(reviewRepository.findBySubmissionId("sub-001")).thenReturn(Optional.of(reviewPass));
@@ -189,8 +185,8 @@ class DashboardServiceImplTest {
             assertThat(response.getGradedSubmissions()).isEqualTo(2L);
             assertThat(response.getPassCount()).isEqualTo(1L);
             assertThat(response.getFailCount()).isEqualTo(1L);
-            assertThat(response.getAverageScore()).isEqualTo(60f); // (80 + 40) / 2
-            assertThat(response.getPendingOverdue()).isEqualTo(0L);
+            assertThat(response.getAverageScore()).isEqualTo(60f);
+            assertThat(response.getPendingOverdue()).isZero();
         }
 
         @Test
@@ -198,7 +194,7 @@ class DashboardServiceImplTest {
         void studentDashboard_overdueCount() {
             Assignment overdueAssignment = Assignment.builder()
                     .assignmentId("assign-overdue")
-                    .dueDate(LocalDate.now().minusDays(1))  // yesterday = past due
+                    .dueDate(LocalDate.now().minusDays(1))
                     .build();
 
             when(assignmentRepository.findAll()).thenReturn(List.of(overdueAssignment));
@@ -219,14 +215,12 @@ class DashboardServiceImplTest {
                     .dueDate(LocalDate.now().plusDays(7))
                     .build();
 
-            // dueDate is in the future so isBefore(now) == false — the overdue filter short-circuits
-            // and findByAssignmentIdAndLearnerId is never called for this assignment.
             when(assignmentRepository.findAll()).thenReturn(List.of(futureAssignment));
             when(submissionRepository.findByLearnerId(STUDENT_ID)).thenReturn(List.of());
 
             DashboardResponse response = dashboardService.getStudentDashboard(STUDENT_ID);
 
-            assertThat(response.getPendingOverdue()).isEqualTo(0L);
+            assertThat(response.getPendingOverdue()).isZero();
         }
 
         @Test
@@ -248,7 +242,7 @@ class DashboardServiceImplTest {
 
             DashboardResponse response = dashboardService.getStudentDashboard(STUDENT_ID);
 
-            assertThat(response.getPendingOverdue()).isEqualTo(0L);
+            assertThat(response.getPendingOverdue()).isZero();
         }
 
         @Test
@@ -259,8 +253,8 @@ class DashboardServiceImplTest {
 
             DashboardResponse response = dashboardService.getStudentDashboard(STUDENT_ID);
 
-            assertThat(response.getAverageScore()).isEqualTo(0.0f);
-            assertThat(response.getTotalSubmissions()).isEqualTo(0L);
+            assertThat(response.getAverageScore()).isZero();
+            assertThat(response.getTotalSubmissions()).isZero();
         }
 
         @Test
@@ -276,7 +270,7 @@ class DashboardServiceImplTest {
 
             DashboardResponse response = dashboardService.getStudentDashboard(STUDENT_ID);
 
-            assertThat(response.getPendingOverdue()).isEqualTo(0L);
+            assertThat(response.getPendingOverdue()).isZero();
         }
 
         @Test
@@ -297,9 +291,9 @@ class DashboardServiceImplTest {
             DashboardResponse response = dashboardService.getStudentDashboard(STUDENT_ID);
 
             assertThat(response.getGradedSubmissions()).isEqualTo(1L);
-            assertThat(response.getPassCount()).isEqualTo(0L);
-            assertThat(response.getFailCount()).isEqualTo(0L);
-            assertThat(response.getAverageScore()).isEqualTo(0.0f);
+            assertThat(response.getPassCount()).isZero();
+            assertThat(response.getFailCount()).isZero();
+            assertThat(response.getAverageScore()).isZero();
         }
     }
 
@@ -331,8 +325,8 @@ class DashboardServiceImplTest {
 
             DashboardResponse response = dashboardService.getCourseAssignmentStats(COURSE_ID);
 
-            assertThat(response.getTotalAssignments()).isEqualTo(0L);
-            assertThat(response.getTotalSubmissions()).isEqualTo(0L);
+            assertThat(response.getTotalAssignments()).isZero();
+            assertThat(response.getTotalSubmissions()).isZero();
         }
 
         @Test
@@ -344,7 +338,7 @@ class DashboardServiceImplTest {
             DashboardResponse response = dashboardService.getCourseAssignmentStats(COURSE_ID);
 
             assertThat(response.getTotalAssignments()).isEqualTo(1L);
-            assertThat(response.getTotalSubmissions()).isEqualTo(0L);
+            assertThat(response.getTotalSubmissions()).isZero();
         }
     }
 }

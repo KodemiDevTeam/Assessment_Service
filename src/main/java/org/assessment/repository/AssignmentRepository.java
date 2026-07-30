@@ -9,7 +9,6 @@ import software.amazon.awssdk.enhanced.dynamodb.Key;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Repository
 public class AssignmentRepository {
@@ -32,7 +31,7 @@ public class AssignmentRepository {
     }
 
     public List<Assignment> findAll() {
-        return table.scan().items().stream().collect(Collectors.toList());
+        return table.scan().items().stream().toList();
     }
 
     public void deleteById(String assignmentId) {
@@ -42,12 +41,12 @@ public class AssignmentRepository {
     public List<Assignment> findByCourseId(String courseId) {
         return table.scan().items().stream()
                 .filter(a -> courseId.equals(a.getCourseId()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<Assignment> findByCreatedBy(String createdBy) {
         return table.scan().items().stream()
                 .filter(a -> createdBy.equals(a.getCreatedBy()))
-                .collect(Collectors.toList());
+                .toList();
     }
 }

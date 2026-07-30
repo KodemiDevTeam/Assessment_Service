@@ -18,11 +18,12 @@ class EnumsTest {
         @DisplayName("should have exactly 3 values: DRAFT, PUBLISHED, CLOSED")
         void hasExpectedValues() {
             AssignmentStatus[] values = AssignmentStatus.values();
-            assertThat(values).hasSize(3);
-            assertThat(values).containsExactly(
-                    AssignmentStatus.DRAFT,
-                    AssignmentStatus.PUBLISHED,
-                    AssignmentStatus.CLOSED);
+            assertThat(values)
+                    .hasSize(3)
+                    .containsExactly(
+                            AssignmentStatus.DRAFT,
+                            AssignmentStatus.PUBLISHED,
+                            AssignmentStatus.CLOSED);
         }
 
         @Test
@@ -55,11 +56,12 @@ class EnumsTest {
         @DisplayName("should have exactly 3 values: FILE_UPLOAD, QUIZ, PROJECT")
         void hasExpectedValues() {
             AssignmentType[] values = AssignmentType.values();
-            assertThat(values).hasSize(3);
-            assertThat(values).containsExactly(
-                    AssignmentType.FILE_UPLOAD,
-                    AssignmentType.QUIZ,
-                    AssignmentType.PROJECT);
+            assertThat(values)
+                    .hasSize(3)
+                    .containsExactly(
+                            AssignmentType.FILE_UPLOAD,
+                            AssignmentType.QUIZ,
+                            AssignmentType.PROJECT);
         }
 
         @Test
@@ -79,18 +81,20 @@ class EnumsTest {
         @DisplayName("should have exactly 3 values: BEGINNER, INTERMEDIATE, ADVANCED")
         void hasExpectedValues() {
             DifficultyLevel[] values = DifficultyLevel.values();
-            assertThat(values).hasSize(3);
-            assertThat(values).containsExactly(
-                    DifficultyLevel.BEGINNER,
-                    DifficultyLevel.INTERMEDIATE,
-                    DifficultyLevel.ADVANCED);
+            assertThat(values)
+                    .hasSize(3)
+                    .containsExactly(
+                            DifficultyLevel.BEGINNER,
+                            DifficultyLevel.INTERMEDIATE,
+                            DifficultyLevel.ADVANCED);
         }
 
         @Test
         @DisplayName("ordinal order should be BEGINNER < INTERMEDIATE < ADVANCED")
         void ordinalOrder() {
-            assertThat(DifficultyLevel.BEGINNER.ordinal()).isLessThan(DifficultyLevel.INTERMEDIATE.ordinal());
-            assertThat(DifficultyLevel.INTERMEDIATE.ordinal()).isLessThan(DifficultyLevel.ADVANCED.ordinal());
+            assertThat(DifficultyLevel.BEGINNER.ordinal())
+                    .isLessThan(DifficultyLevel.INTERMEDIATE.ordinal())
+                    .isLessThan(DifficultyLevel.ADVANCED.ordinal());
         }
     }
 
@@ -102,11 +106,12 @@ class EnumsTest {
         @DisplayName("should have exactly 3 values: PASS, FAIL, PENDING")
         void hasExpectedValues() {
             ResultStatus[] values = ResultStatus.values();
-            assertThat(values).hasSize(3);
-            assertThat(values).containsExactly(
-                    ResultStatus.PASS,
-                    ResultStatus.FAIL,
-                    ResultStatus.PENDING);
+            assertThat(values)
+                    .hasSize(3)
+                    .containsExactly(
+                            ResultStatus.PASS,
+                            ResultStatus.FAIL,
+                            ResultStatus.PENDING);
         }
 
         @Test
@@ -126,11 +131,12 @@ class EnumsTest {
         @DisplayName("should have exactly 3 values: ADMIN, TRAINER, LEARNER")
         void hasExpectedValues() {
             Role[] values = Role.values();
-            assertThat(values).hasSize(3);
-            assertThat(values).containsExactly(
-                    Role.ADMIN,
-                    Role.TRAINER,
-                    Role.LEARNER);
+            assertThat(values)
+                    .hasSize(3)
+                    .containsExactly(
+                            Role.ADMIN,
+                            Role.TRAINER,
+                            Role.LEARNER);
         }
 
         @Test
@@ -149,12 +155,13 @@ class EnumsTest {
         @DisplayName("should have exactly 4 values")
         void hasExpectedValues() {
             SubmissionStatus[] values = SubmissionStatus.values();
-            assertThat(values).hasSize(4);
-            assertThat(values).containsExactly(
-                    SubmissionStatus.NOT_SUBMITTED,
-                    SubmissionStatus.SUBMITTED,
-                    SubmissionStatus.UNDER_REVIEW,
-                    SubmissionStatus.REVIEWED);
+            assertThat(values)
+                    .hasSize(4)
+                    .containsExactly(
+                            SubmissionStatus.NOT_SUBMITTED,
+                            SubmissionStatus.SUBMITTED,
+                            SubmissionStatus.UNDER_REVIEW,
+                            SubmissionStatus.REVIEWED);
         }
 
         @Test

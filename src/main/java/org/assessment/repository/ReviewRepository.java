@@ -9,7 +9,6 @@ import software.amazon.awssdk.enhanced.dynamodb.Key;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Repository
 public class ReviewRepository {
@@ -40,6 +39,6 @@ public class ReviewRepository {
     public List<Review> findByReviewerId(String reviewerId) {
         return table.scan().items().stream()
                 .filter(r -> reviewerId.equals(r.getReviewerId()))
-                .collect(Collectors.toList());
+                .toList();
     }
 }

@@ -111,11 +111,11 @@ class ReportServiceImplTest {
             assertThat(report.getAssignmentId()).isEqualTo(ASSIGNMENT_ID);
             assertThat(report.getAssignmentTitle()).isEqualTo("Spring Boot Assignment");
             assertThat(report.getTotalStudents()).isEqualTo(2L);
-            assertThat(report.getSubmittedCount()).isEqualTo(2L);  // both are SUBMITTED or REVIEWED (not NOT_SUBMITTED)
+            assertThat(report.getSubmittedCount()).isEqualTo(2L);
             assertThat(report.getGradedCount()).isEqualTo(1L);
             assertThat(report.getPendingCount()).isEqualTo(1L);
             assertThat(report.getPassCount()).isEqualTo(1L);
-            assertThat(report.getFailCount()).isEqualTo(0L);
+            assertThat(report.getFailCount()).isZero();
             assertThat(report.getAverageScore()).isEqualTo(80f);
             assertThat(report.getHighestScore()).isEqualTo(80f);
             assertThat(report.getLowestScore()).isEqualTo(80f);
@@ -135,14 +135,13 @@ class ReportServiceImplTest {
             when(assignmentRepository.findById(ASSIGNMENT_ID)).thenReturn(Optional.of(sampleAssignment));
             when(submissionRepository.findByAssignmentId(ASSIGNMENT_ID))
                     .thenReturn(List.of(reviewedSub, sub3));
-            when(reviewRepository.findBySubmissionId("sub-002")).thenReturn(Optional.of(passReview)); // 80f
-            when(reviewRepository.findBySubmissionId("sub-003")).thenReturn(Optional.of(review3));    // 60f
+            when(reviewRepository.findBySubmissionId("sub-002")).thenReturn(Optional.of(passReview));
+            when(reviewRepository.findBySubmissionId("sub-003")).thenReturn(Optional.of(review3));
             when(submissionMapper.toResponse(any(), any())).thenReturn(
                     SubmissionResponse.builder().id("x").build());
 
             ReportResponse report = reportService.getAssignmentReport(ASSIGNMENT_ID);
 
-            // average = (80 + 60) / 2 = 70
             assertThat(report.getAverageScore()).isEqualTo(70f);
             assertThat(report.getHighestScore()).isEqualTo(80f);
             assertThat(report.getLowestScore()).isEqualTo(60f);
@@ -157,12 +156,12 @@ class ReportServiceImplTest {
 
             ReportResponse report = reportService.getAssignmentReport(ASSIGNMENT_ID);
 
-            assertThat(report.getTotalStudents()).isEqualTo(0L);
-            assertThat(report.getAverageScore()).isEqualTo(0.0f);
-            assertThat(report.getHighestScore()).isEqualTo(0.0f);
-            assertThat(report.getLowestScore()).isEqualTo(0.0f);
-            assertThat(report.getPassCount()).isEqualTo(0L);
-            assertThat(report.getFailCount()).isEqualTo(0L);
+            assertThat(report.getTotalStudents()).isZero();
+            assertThat(report.getAverageScore()).isZero();
+            assertThat(report.getHighestScore()).isZero();
+            assertThat(report.getLowestScore()).isZero();
+            assertThat(report.getPassCount()).isZero();
+            assertThat(report.getFailCount()).isZero();
         }
 
         @Test
@@ -175,8 +174,8 @@ class ReportServiceImplTest {
             when(assignmentRepository.findById(ASSIGNMENT_ID)).thenReturn(Optional.of(sampleAssignment));
             when(submissionRepository.findByAssignmentId(ASSIGNMENT_ID))
                     .thenReturn(List.of(reviewedSub, failSub));
-            when(reviewRepository.findBySubmissionId("sub-002")).thenReturn(Optional.of(passReview)); // PASS 80
-            when(reviewRepository.findBySubmissionId("sub-003")).thenReturn(Optional.of(failReview)); // FAIL 30
+            when(reviewRepository.findBySubmissionId("sub-002")).thenReturn(Optional.of(passReview));
+            when(reviewRepository.findBySubmissionId("sub-003")).thenReturn(Optional.of(failReview));
             when(submissionMapper.toResponse(any(), any())).thenReturn(
                     SubmissionResponse.builder().id("x").build());
 
@@ -184,7 +183,6 @@ class ReportServiceImplTest {
 
             assertThat(report.getPassCount()).isEqualTo(1L);
             assertThat(report.getFailCount()).isEqualTo(1L);
-            // average = (80 + 30) / 2 = 55
             assertThat(report.getAverageScore()).isEqualTo(55f);
         }
 
@@ -241,8 +239,8 @@ class ReportServiceImplTest {
             ReportResponse report = reportService.getAssignmentReport(ASSIGNMENT_ID);
 
             assertThat(report.getTotalStudents()).isEqualTo(1L);
-            assertThat(report.getSubmittedCount()).isEqualTo(0L);
-            assertThat(report.getGradedCount()).isEqualTo(0L);
+            assertThat(report.getSubmittedCount()).isZero();
+            assertThat(report.getGradedCount()).isZero();
             assertThat(report.getPendingCount()).isEqualTo(1L);
         }
 
@@ -263,9 +261,9 @@ class ReportServiceImplTest {
             ReportResponse report = reportService.getAssignmentReport(ASSIGNMENT_ID);
 
             assertThat(report.getGradedCount()).isEqualTo(1L);
-            assertThat(report.getAverageScore()).isEqualTo(0.0f);
-            assertThat(report.getHighestScore()).isEqualTo(0.0f);
-            assertThat(report.getLowestScore()).isEqualTo(0.0f);
+            assertThat(report.getAverageScore()).isZero();
+            assertThat(report.getHighestScore()).isZero();
+            assertThat(report.getLowestScore()).isZero();
         }
     }
 
@@ -285,7 +283,6 @@ class ReportServiceImplTest {
 
             when(assignmentRepository.findByCourseId(COURSE_ID))
                     .thenReturn(List.of(sampleAssignment, assign2));
-            // Both assignments have no submissions
             when(assignmentRepository.findById(ASSIGNMENT_ID)).thenReturn(Optional.of(sampleAssignment));
             when(assignmentRepository.findById("assign-002")).thenReturn(Optional.of(assign2));
             when(submissionRepository.findByAssignmentId(ASSIGNMENT_ID)).thenReturn(List.of());
@@ -293,8 +290,9 @@ class ReportServiceImplTest {
 
             List<ReportResponse> reports = reportService.getCourseReport(COURSE_ID);
 
-            assertThat(reports).hasSize(2);
-            assertThat(reports).extracting(ReportResponse::getAssignmentId)
+            assertThat(reports)
+                    .hasSize(2)
+                    .extracting(ReportResponse::getAssignmentId)
                     .containsExactlyInAnyOrder(ASSIGNMENT_ID, "assign-002");
         }
 
@@ -345,11 +343,12 @@ class ReportServiceImplTest {
             byte[] csvBytes = reportService.exportReportAsCsv(ASSIGNMENT_ID);
             String csv = new String(csvBytes);
 
-            assertThat(csv).contains("sub-001");
-            assertThat(csv).contains("student-1");
-            assertThat(csv).contains("REVIEWED");
-            assertThat(csv).contains("80.0");
-            assertThat(csv).contains("PASS");
+            assertThat(csv)
+                    .contains("sub-001")
+                    .contains("student-1")
+                    .contains("REVIEWED")
+                    .contains("80.0")
+                    .contains("PASS");
         }
 
         @Test
@@ -361,9 +360,7 @@ class ReportServiceImplTest {
             byte[] csvBytes = reportService.exportReportAsCsv(ASSIGNMENT_ID);
             String csv = new String(csvBytes);
 
-            // Only one line — the header
-            long lineCount = csv.lines().count();
-            assertThat(lineCount).isEqualTo(1L);
+            assertThat(csv.lines().count()).isEqualTo(1L);
         }
 
         @Test
@@ -375,7 +372,6 @@ class ReportServiceImplTest {
             byte[] csvBytes = reportService.exportReportAsCsv(ASSIGNMENT_ID);
 
             assertThat(csvBytes).isNotEmpty();
-            // Verify it can be decoded as UTF-8 without errors
             String decoded = new String(csvBytes, java.nio.charset.StandardCharsets.UTF_8);
             assertThat(decoded).isNotBlank();
         }
@@ -384,12 +380,8 @@ class ReportServiceImplTest {
         @DisplayName("should handle null fields in submission response when exporting CSV")
         void exportCsv_nullFields_emptyValuesInCsv() {
             SubmissionResponse srNulls = SubmissionResponse.builder()
-                    .id("sub-null")
-                    .studentId("student-null")
-                    .status(null)
-                    .obtainedMarks(null)
-                    .resultStatus(null)
-                    .submittedAt(null)
+                    .id("sub-null").studentId("student-null")
+                    .status(null).obtainedMarks(null).resultStatus(null).submittedAt(null)
                     .build();
 
             when(assignmentRepository.findById(ASSIGNMENT_ID)).thenReturn(Optional.of(sampleAssignment));

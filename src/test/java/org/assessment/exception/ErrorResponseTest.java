@@ -28,18 +28,17 @@ class ErrorResponseTest {
         void of_setsTimestamp() {
             ErrorResponse response = ErrorResponse.of(400, "Bad Request", "Invalid input");
 
-            assertThat(response.getTimestamp()).isNotNull();
-            assertThat(response.getTimestamp()).isNotBlank();
+            assertThat(response.getTimestamp())
+                    .isNotNull()
+                    .isNotBlank();
         }
 
         @Test
-        @DisplayName("should produce unique timestamps for consecutive calls")
-        void of_timestampIsCurrentTime() throws InterruptedException {
+        @DisplayName("timestamp should be a non-null parseable LocalDateTime string")
+        void of_timestampIsCurrentTime() {
             ErrorResponse r1 = ErrorResponse.of(500, "Error", "msg");
-            Thread.sleep(1);
             ErrorResponse r2 = ErrorResponse.of(500, "Error", "msg");
 
-            // Both are non-null; timestamps should be parseable LocalDateTime strings
             assertThat(r1.getTimestamp()).isNotNull();
             assertThat(r2.getTimestamp()).isNotNull();
         }

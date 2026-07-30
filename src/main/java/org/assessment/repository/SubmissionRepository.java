@@ -10,7 +10,6 @@ import software.amazon.awssdk.enhanced.dynamodb.Key;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Repository
 public class SubmissionRepository {
@@ -35,13 +34,13 @@ public class SubmissionRepository {
     public List<Submission> findByAssignmentId(String assignmentId) {
         return table.scan().items().stream()
                 .filter(s -> assignmentId.equals(s.getAssignmentId()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<Submission> findByLearnerId(String learnerId) {
         return table.scan().items().stream()
                 .filter(s -> learnerId.equals(s.getLearnerId()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public Optional<Submission> findByAssignmentIdAndLearnerId(String assignmentId, String learnerId) {
@@ -53,7 +52,7 @@ public class SubmissionRepository {
     public List<Submission> findByAssignmentIdAndStatus(String assignmentId, SubmissionStatus status) {
         return table.scan().items().stream()
                 .filter(s -> assignmentId.equals(s.getAssignmentId()) && status == s.getStatus())
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public long countByAssignmentId(String assignmentId) {

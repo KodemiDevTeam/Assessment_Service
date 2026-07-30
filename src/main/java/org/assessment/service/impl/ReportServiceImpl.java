@@ -19,8 +19,6 @@ import org.springframework.stereotype.Service;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -37,80 +35,14 @@ public class ReportServiceImpl implements ReportService {
                 .orElseThrow(() -> new ResourceNotFoundException("Assignment not found with id: " + assignmentId));
 
         List<Submission> submissions = submissionRepository.findByAssignmentId(assignmentId);
-        List<SubmissionResponse> submissionResponses = new ArrayList<>();
-
-        long submittedCount = 0;
-        long gradedCount = 0;
-        long pendingCount = 0;
-        long passCount = 0;
-        long failCount = 0;
-        float totalMarks = 0.0f;
-        float highestScore = 0.0f;
-        float lowestScore = Float.MAX_VALUE;
-        boolean hasGrades = false;
-
-        for (Submission submission : submissions) {
-            Optional<Review> reviewOpt = reviewRepository.findBySubmissionId(submission.getSubmissionId());
-            Review review = reviewOpt.orElse(null);
-            
-            submissionResponses.add(submissionMapper.toResponse(submission, review));
-
-            if (submission.getStatus() != SubmissionStatus.NOT_SUBMITTED) {
-                submittedCount++;
-            }
-
-            if (submission.getStatus() == SubmissionStatus.REVIEWED) {
-                gradedCount++;
-            } else {
-                pendingCount++;
-            }
-
-            if (review != null) {
-                if (review.getResultStatus() == ResultStatus.PASS) {
-                    passCount++;
-                } else if (review.getResultStatus() == ResultStatus.FAIL) {
-                    failCount++;
-                }
-                if (review.getMarksAwarded() != null) {
-                    hasGrades = true;
-                    float marks = review.getMarksAwarded();
-                    totalMarks += marks;
-                    if (marks > highestScore) {
-                        highestScore = marks;
-                    }
-                    if (marks < lowestScore) {
-                        lowestScore = marks;
-                    }
-                }
-            }
-        }
-
-        float averageScore = (hasGrades && gradedCount > 0) ? (totalMarks / gradedCount) : 0.0f;
-        float finalLowestScore = hasGrades ? lowestScore : 0.0f;
-
-        return ReportResponse.builder()
-                .assignmentId(assignmentId)
-                .assignmentTitle(assignment.getTitle())
-                .dueDate(assignment.getDueDate() != null ? assignment.getDueDate().toString() : null)
-                .status(assignment.getStatus())
-                .totalStudents((long) submissions.size())
-                .submittedCount(submittedCount)
-                .pendingCount(pendingCount)
-                .gradedCount(gradedCount)
-                .averageScore(averageScore)
-                .highestScore(highestScore)
-                .lowestScore(finalLowestScore)
-                .passCount(passCount)
-                .failCount(failCount)
-                .submissions(submissionResponses)
-                .build();
+        return buildReport(assignmentId, assignment, submissions);
     }
 
     @Override
     public List<ReportResponse> getCourseReport(String courseId) {
         return assignmentRepository.findByCourseId(courseId).stream()
                 .map(a -> getAssignmentReport(a.getAssignmentId()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -127,5 +59,92 @@ public class ReportServiceImpl implements ReportService {
                         .append(s.getSubmittedAt() != null ? s.getSubmittedAt() : "").append("\n")
         );
         return csv.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    // -------------------------------------------------------------------------
+    // Private helpers — extracted to reduce cognitive complexity of getAssignmentReport
+    // -------------------------------------------------------------------------
+
+    private ReportResponse buildReport(String assignmentId, Assignment assignment, List<Submission> submissions) {
+        List<SubmissionResponse> submissionResponses = new ArrayList<>();
+        ReportStats stats = new ReportStats();
+
+        for (Submission submission : submissions) {
+            Review review = reviewRepository.findBySubmissionId(submission.getSubmissionId()).orElse(null);
+            submissionResponses.add(submissionMapper.toResponse(submission, review));
+            updateCounts(stats, submission, review);
+        }
+
+        return toReportResponse(assignmentId, assignment, submissions.size(), stats, submissionResponses);
+    }
+
+    private void updateCounts(ReportStats stats, Submission submission, Review review) {
+        if (submission.getStatus() != SubmissionStatus.NOT_SUBMITTED) {
+            stats.submittedCount++;
+        }
+
+        if (submission.getStatus() == SubmissionStatus.REVIEWED) {
+            stats.gradedCount++;
+        } else {
+            stats.pendingCount++;
+        }
+
+        updateScoreStats(stats, review);
+    }
+
+    private void updateScoreStats(ReportStats stats, Review review) {
+        if (review == null) {
+            return;
+        }
+        if (review.getResultStatus() == ResultStatus.PASS) {
+            stats.passCount++;
+        } else if (review.getResultStatus() == ResultStatus.FAIL) {
+            stats.failCount++;
+        }
+        if (review.getMarksAwarded() != null) {
+            stats.hasGrades = true;
+            float marks = review.getMarksAwarded();
+            stats.totalMarks += marks;
+            if (marks > stats.highestScore) stats.highestScore = marks;
+            if (marks < stats.lowestScore)  stats.lowestScore  = marks;
+        }
+    }
+
+    private ReportResponse toReportResponse(String assignmentId, Assignment assignment,
+                                             int totalStudents, ReportStats stats,
+                                             List<SubmissionResponse> submissionResponses) {
+        float averageScore   = (stats.hasGrades && stats.gradedCount > 0)
+                ? stats.totalMarks / stats.gradedCount : 0.0f;
+        float finalLowest    = stats.hasGrades ? stats.lowestScore : 0.0f;
+
+        return ReportResponse.builder()
+                .assignmentId(assignmentId)
+                .assignmentTitle(assignment.getTitle())
+                .dueDate(assignment.getDueDate() != null ? assignment.getDueDate().toString() : null)
+                .status(assignment.getStatus())
+                .totalStudents((long) totalStudents)
+                .submittedCount(stats.submittedCount)
+                .pendingCount(stats.pendingCount)
+                .gradedCount(stats.gradedCount)
+                .averageScore(averageScore)
+                .highestScore(stats.highestScore)
+                .lowestScore(finalLowest)
+                .passCount(stats.passCount)
+                .failCount(stats.failCount)
+                .submissions(submissionResponses)
+                .build();
+    }
+
+    /** Simple mutable accumulator — keeps the loop body flat. */
+    private static class ReportStats {
+        long  submittedCount = 0;
+        long  gradedCount    = 0;
+        long  pendingCount   = 0;
+        long  passCount      = 0;
+        long  failCount      = 0;
+        float totalMarks     = 0.0f;
+        float highestScore   = 0.0f;
+        float lowestScore    = Float.MAX_VALUE;
+        boolean hasGrades    = false;
     }
 }
