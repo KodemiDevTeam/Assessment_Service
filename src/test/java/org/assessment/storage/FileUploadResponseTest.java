@@ -8,18 +8,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("FileUploadResponse Tests")
 class FileUploadResponseTest {
 
+    /** Minimal concrete implementation used only for testing the interface contract. */
+    private static class TestFileUploadResponse implements FileUploadResponse {
+    }
+
     @Test
-    @DisplayName("should be instantiable with no-args constructor")
+    @DisplayName("concrete implementation should be instantiable")
     void canInstantiate() {
-        FileUploadResponse response = new FileUploadResponse();
+        FileUploadResponse response = new TestFileUploadResponse();
         assertThat(response).isNotNull();
     }
 
     @Test
     @DisplayName("two instances should not be same object")
     void twoInstancesAreDistinct() {
-        FileUploadResponse r1 = new FileUploadResponse();
-        FileUploadResponse r2 = new FileUploadResponse();
+        FileUploadResponse r1 = new TestFileUploadResponse();
+        FileUploadResponse r2 = new TestFileUploadResponse();
         assertThat(r1).isNotSameAs(r2);
     }
 }
