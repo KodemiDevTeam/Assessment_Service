@@ -19,8 +19,6 @@ import org.springframework.stereotype.Service;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,100 +31,121 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public ReportResponse getAssignmentReport(String assignmentId) {
-<span class="fc" id="L36">        Assignment assignment = assignmentRepository.findById(assignmentId)</span>
-<span class="fc" id="L37">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Assignment not found with id: &quot; + assignmentId));</span>
+<span class="fc" id="L34">        Assignment assignment = assignmentRepository.findById(assignmentId)</span>
+<span class="fc" id="L35">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Assignment not found with id: &quot; + assignmentId));</span>
 
-<span class="fc" id="L39">        List&lt;Submission&gt; submissions = submissionRepository.findByAssignmentId(assignmentId);</span>
-<span class="fc" id="L40">        List&lt;SubmissionResponse&gt; submissionResponses = new ArrayList&lt;&gt;();</span>
-
-<span class="fc" id="L42">        long submittedCount = 0;</span>
-<span class="fc" id="L43">        long gradedCount = 0;</span>
-<span class="fc" id="L44">        long pendingCount = 0;</span>
-<span class="fc" id="L45">        long passCount = 0;</span>
-<span class="fc" id="L46">        long failCount = 0;</span>
-<span class="fc" id="L47">        float totalMarks = 0.0f;</span>
-<span class="fc" id="L48">        float highestScore = 0.0f;</span>
-<span class="fc" id="L49">        float lowestScore = Float.MAX_VALUE;</span>
-<span class="fc" id="L50">        boolean hasGrades = false;</span>
-
-<span class="fc bfc" id="L52" title="All 2 branches covered.">        for (Submission submission : submissions) {</span>
-<span class="fc" id="L53">            Optional&lt;Review&gt; reviewOpt = reviewRepository.findBySubmissionId(submission.getSubmissionId());</span>
-<span class="fc" id="L54">            Review review = reviewOpt.orElse(null);</span>
-            
-<span class="fc" id="L56">            submissionResponses.add(submissionMapper.toResponse(submission, review));</span>
-
-<span class="fc bfc" id="L58" title="All 2 branches covered.">            if (submission.getStatus() != SubmissionStatus.NOT_SUBMITTED) {</span>
-<span class="fc" id="L59">                submittedCount++;</span>
-            }
-
-<span class="fc bfc" id="L62" title="All 2 branches covered.">            if (submission.getStatus() == SubmissionStatus.REVIEWED) {</span>
-<span class="fc" id="L63">                gradedCount++;</span>
-            } else {
-<span class="fc" id="L65">                pendingCount++;</span>
-            }
-
-<span class="fc bfc" id="L68" title="All 2 branches covered.">            if (review != null) {</span>
-<span class="fc bfc" id="L69" title="All 2 branches covered.">                if (review.getResultStatus() == ResultStatus.PASS) {</span>
-<span class="fc" id="L70">                    passCount++;</span>
-<span class="fc bfc" id="L71" title="All 2 branches covered.">                } else if (review.getResultStatus() == ResultStatus.FAIL) {</span>
-<span class="fc" id="L72">                    failCount++;</span>
-                }
-<span class="fc bfc" id="L74" title="All 2 branches covered.">                if (review.getMarksAwarded() != null) {</span>
-<span class="fc" id="L75">                    hasGrades = true;</span>
-<span class="fc" id="L76">                    float marks = review.getMarksAwarded();</span>
-<span class="fc" id="L77">                    totalMarks += marks;</span>
-<span class="fc bfc" id="L78" title="All 2 branches covered.">                    if (marks &gt; highestScore) {</span>
-<span class="fc" id="L79">                        highestScore = marks;</span>
-                    }
-<span class="pc bpc" id="L81" title="1 of 2 branches missed.">                    if (marks &lt; lowestScore) {</span>
-<span class="fc" id="L82">                        lowestScore = marks;</span>
-                    }
-                }
-            }
-<span class="fc" id="L86">        }</span>
-
-<span class="pc bpc" id="L88" title="1 of 4 branches missed.">        float averageScore = (hasGrades &amp;&amp; gradedCount &gt; 0) ? (totalMarks / gradedCount) : 0.0f;</span>
-<span class="fc bfc" id="L89" title="All 2 branches covered.">        float finalLowestScore = hasGrades ? lowestScore : 0.0f;</span>
-
-<span class="fc" id="L91">        return ReportResponse.builder()</span>
-<span class="fc" id="L92">                .assignmentId(assignmentId)</span>
-<span class="fc" id="L93">                .assignmentTitle(assignment.getTitle())</span>
-<span class="fc bfc" id="L94" title="All 2 branches covered.">                .dueDate(assignment.getDueDate() != null ? assignment.getDueDate().toString() : null)</span>
-<span class="fc" id="L95">                .status(assignment.getStatus())</span>
-<span class="fc" id="L96">                .totalStudents((long) submissions.size())</span>
-<span class="fc" id="L97">                .submittedCount(submittedCount)</span>
-<span class="fc" id="L98">                .pendingCount(pendingCount)</span>
-<span class="fc" id="L99">                .gradedCount(gradedCount)</span>
-<span class="fc" id="L100">                .averageScore(averageScore)</span>
-<span class="fc" id="L101">                .highestScore(highestScore)</span>
-<span class="fc" id="L102">                .lowestScore(finalLowestScore)</span>
-<span class="fc" id="L103">                .passCount(passCount)</span>
-<span class="fc" id="L104">                .failCount(failCount)</span>
-<span class="fc" id="L105">                .submissions(submissionResponses)</span>
-<span class="fc" id="L106">                .build();</span>
+<span class="fc" id="L37">        List&lt;Submission&gt; submissions = submissionRepository.findByAssignmentId(assignmentId);</span>
+<span class="fc" id="L38">        return buildReport(assignmentId, assignment, submissions);</span>
     }
 
     @Override
     public List&lt;ReportResponse&gt; getCourseReport(String courseId) {
-<span class="fc" id="L111">        return assignmentRepository.findByCourseId(courseId).stream()</span>
-<span class="fc" id="L112">                .map(a -&gt; getAssignmentReport(a.getAssignmentId()))</span>
-<span class="fc" id="L113">                .collect(Collectors.toList());</span>
+<span class="fc" id="L43">        return assignmentRepository.findByCourseId(courseId).stream()</span>
+<span class="fc" id="L44">                .map(a -&gt; getAssignmentReport(a.getAssignmentId()))</span>
+<span class="fc" id="L45">                .toList();</span>
     }
 
     @Override
     public byte[] exportReportAsCsv(String assignmentId) {
-<span class="fc" id="L118">        ReportResponse report = getAssignmentReport(assignmentId);</span>
-<span class="fc" id="L119">        StringBuilder csv = new StringBuilder();</span>
-<span class="fc" id="L120">        csv.append(&quot;SubmissionId,StudentId,Status,ObtainedMarks,ResultStatus,SubmittedAt\n&quot;);</span>
-<span class="fc" id="L121">        report.getSubmissions().forEach(s -&gt;</span>
-<span class="fc" id="L122">                csv.append(s.getId()).append(&quot;,&quot;)</span>
-<span class="fc" id="L123">                        .append(s.getStudentId()).append(&quot;,&quot;)</span>
-<span class="fc bfc" id="L124" title="All 2 branches covered.">                        .append(s.getStatus() != null ? s.getStatus().name() : &quot;&quot;).append(&quot;,&quot;)</span>
-<span class="fc bfc" id="L125" title="All 2 branches covered.">                        .append(s.getObtainedMarks() != null ? s.getObtainedMarks() : &quot;&quot;).append(&quot;,&quot;)</span>
-<span class="fc bfc" id="L126" title="All 2 branches covered.">                        .append(s.getResultStatus() != null ? s.getResultStatus().name() : &quot;&quot;).append(&quot;,&quot;)</span>
-<span class="fc bfc" id="L127" title="All 2 branches covered.">                        .append(s.getSubmittedAt() != null ? s.getSubmittedAt() : &quot;&quot;).append(&quot;\n&quot;)</span>
+<span class="fc" id="L50">        ReportResponse report = getAssignmentReport(assignmentId);</span>
+<span class="fc" id="L51">        StringBuilder csv = new StringBuilder();</span>
+<span class="fc" id="L52">        csv.append(&quot;SubmissionId,StudentId,Status,ObtainedMarks,ResultStatus,SubmittedAt\n&quot;);</span>
+<span class="fc" id="L53">        report.getSubmissions().forEach(s -&gt;</span>
+<span class="fc" id="L54">                csv.append(s.getId()).append(&quot;,&quot;)</span>
+<span class="fc" id="L55">                        .append(s.getStudentId()).append(&quot;,&quot;)</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">                        .append(s.getStatus() != null ? s.getStatus().name() : &quot;&quot;).append(&quot;,&quot;)</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">                        .append(s.getObtainedMarks() != null ? s.getObtainedMarks() : &quot;&quot;).append(&quot;,&quot;)</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">                        .append(s.getResultStatus() != null ? s.getResultStatus().name() : &quot;&quot;).append(&quot;,&quot;)</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">                        .append(s.getSubmittedAt() != null ? s.getSubmittedAt() : &quot;&quot;).append(&quot;\n&quot;)</span>
         );
-<span class="fc" id="L129">        return csv.toString().getBytes(StandardCharsets.UTF_8);</span>
+<span class="fc" id="L61">        return csv.toString().getBytes(StandardCharsets.UTF_8);</span>
+    }
+
+    // -------------------------------------------------------------------------
+    // Private helpers — extracted to reduce cognitive complexity of getAssignmentReport
+    // -------------------------------------------------------------------------
+
+    private ReportResponse buildReport(String assignmentId, Assignment assignment, List&lt;Submission&gt; submissions) {
+<span class="fc" id="L69">        List&lt;SubmissionResponse&gt; submissionResponses = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L70">        ReportStats stats = new ReportStats();</span>
+
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        for (Submission submission : submissions) {</span>
+<span class="fc" id="L73">            Review review = reviewRepository.findBySubmissionId(submission.getSubmissionId()).orElse(null);</span>
+<span class="fc" id="L74">            submissionResponses.add(submissionMapper.toResponse(submission, review));</span>
+<span class="fc" id="L75">            updateCounts(stats, submission, review);</span>
+<span class="fc" id="L76">        }</span>
+
+<span class="fc" id="L78">        return toReportResponse(assignmentId, assignment, submissions.size(), stats, submissionResponses);</span>
+    }
+
+    private void updateCounts(ReportStats stats, Submission submission, Review review) {
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        if (submission.getStatus() != SubmissionStatus.NOT_SUBMITTED) {</span>
+<span class="fc" id="L83">            stats.submittedCount++;</span>
+        }
+
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        if (submission.getStatus() == SubmissionStatus.REVIEWED) {</span>
+<span class="fc" id="L87">            stats.gradedCount++;</span>
+        } else {
+<span class="fc" id="L89">            stats.pendingCount++;</span>
+        }
+
+<span class="fc" id="L92">        updateScoreStats(stats, review);</span>
+<span class="fc" id="L93">    }</span>
+
+    private void updateScoreStats(ReportStats stats, Review review) {
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        if (review == null) {</span>
+<span class="fc" id="L97">            return;</span>
+        }
+<span class="fc bfc" id="L99" title="All 2 branches covered.">        if (review.getResultStatus() == ResultStatus.PASS) {</span>
+<span class="fc" id="L100">            stats.passCount++;</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        } else if (review.getResultStatus() == ResultStatus.FAIL) {</span>
+<span class="fc" id="L102">            stats.failCount++;</span>
+        }
+<span class="fc bfc" id="L104" title="All 2 branches covered.">        if (review.getMarksAwarded() != null) {</span>
+<span class="fc" id="L105">            stats.hasGrades = true;</span>
+<span class="fc" id="L106">            float marks = review.getMarksAwarded();</span>
+<span class="fc" id="L107">            stats.totalMarks += marks;</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">            if (marks &gt; stats.highestScore) stats.highestScore = marks;</span>
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">            if (marks &lt; stats.lowestScore)  stats.lowestScore  = marks;</span>
+        }
+<span class="fc" id="L111">    }</span>
+
+    private ReportResponse toReportResponse(String assignmentId, Assignment assignment,
+                                             int totalStudents, ReportStats stats,
+                                             List&lt;SubmissionResponse&gt; submissionResponses) {
+<span class="pc bpc" id="L116" title="1 of 4 branches missed.">        float averageScore   = (stats.hasGrades &amp;&amp; stats.gradedCount &gt; 0)</span>
+<span class="fc" id="L117">                ? stats.totalMarks / stats.gradedCount : 0.0f;</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        float finalLowest    = stats.hasGrades ? stats.lowestScore : 0.0f;</span>
+
+<span class="fc" id="L120">        return ReportResponse.builder()</span>
+<span class="fc" id="L121">                .assignmentId(assignmentId)</span>
+<span class="fc" id="L122">                .assignmentTitle(assignment.getTitle())</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">                .dueDate(assignment.getDueDate() != null ? assignment.getDueDate().toString() : null)</span>
+<span class="fc" id="L124">                .status(assignment.getStatus())</span>
+<span class="fc" id="L125">                .totalStudents((long) totalStudents)</span>
+<span class="fc" id="L126">                .submittedCount(stats.submittedCount)</span>
+<span class="fc" id="L127">                .pendingCount(stats.pendingCount)</span>
+<span class="fc" id="L128">                .gradedCount(stats.gradedCount)</span>
+<span class="fc" id="L129">                .averageScore(averageScore)</span>
+<span class="fc" id="L130">                .highestScore(stats.highestScore)</span>
+<span class="fc" id="L131">                .lowestScore(finalLowest)</span>
+<span class="fc" id="L132">                .passCount(stats.passCount)</span>
+<span class="fc" id="L133">                .failCount(stats.failCount)</span>
+<span class="fc" id="L134">                .submissions(submissionResponses)</span>
+<span class="fc" id="L135">                .build();</span>
+    }
+
+    /** Simple mutable accumulator — keeps the loop body flat. */
+<span class="fc" id="L139">    private static class ReportStats {</span>
+<span class="fc" id="L140">        long  submittedCount = 0;</span>
+<span class="fc" id="L141">        long  gradedCount    = 0;</span>
+<span class="fc" id="L142">        long  pendingCount   = 0;</span>
+<span class="fc" id="L143">        long  passCount      = 0;</span>
+<span class="fc" id="L144">        long  failCount      = 0;</span>
+<span class="fc" id="L145">        float totalMarks     = 0.0f;</span>
+<span class="fc" id="L146">        float highestScore   = 0.0f;</span>
+<span class="fc" id="L147">        float lowestScore    = Float.MAX_VALUE;</span>
+<span class="fc" id="L148">        boolean hasGrades    = false;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

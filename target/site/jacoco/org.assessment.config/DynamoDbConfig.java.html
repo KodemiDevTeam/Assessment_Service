@@ -4,31 +4,32 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 
 @Configuration
-<span class="fc" id="L12">public class DynamoDbConfig {</span>
+<span class="fc" id="L13">public class DynamoDbConfig {</span>
 
     @Value(&quot;${aws.region}&quot;)
     private String region;
 
     @Bean
     public DynamoDbClient dynamoDbClient() {
-
 <span class="fc" id="L20">        return DynamoDbClient.builder()</span>
 <span class="fc" id="L21">                .region(Region.of(region))</span>
-<span class="fc" id="L22">                .build();</span>
+<span class="fc" id="L22">                .credentialsProvider(DefaultCredentialsProvider.create())</span>
+<span class="fc" id="L23">                .build();</span>
     }
 
     @Bean
     public DynamoDbEnhancedClient dynamoDbEnhancedClient(
             DynamoDbClient dynamoDbClient) {
 
-<span class="fc" id="L29">        return DynamoDbEnhancedClient.builder()</span>
-<span class="fc" id="L30">                .dynamoDbClient(dynamoDbClient)</span>
-<span class="fc" id="L31">                .build();</span>
+<span class="fc" id="L30">        return DynamoDbEnhancedClient.builder()</span>
+<span class="fc" id="L31">                .dynamoDbClient(dynamoDbClient)</span>
+<span class="fc" id="L32">                .build();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

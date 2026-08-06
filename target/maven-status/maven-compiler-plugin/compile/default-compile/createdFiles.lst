@@ -55,6 +55,7 @@ org\assessment\controller\StudentAssignmentController.class
 org\assessment\entity\Assignment.class
 org\assessment\dto\response\ReportResponse$ReportResponseBuilder.class
 org\assessment\dto\response\SubmissionResponse.class
+org\assessment\service\impl\ReportServiceImpl$ReportStats.class
 org\assessment\storage\S3Service.class
 org\assessment\config\DynamoDbConfig.class
 org\assessment\dto\response\DashboardResponse.class

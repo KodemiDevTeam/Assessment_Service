@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: org.assessment.controller.AssignmentControllerTest$DeleteAssignment
 -------------------------------------------------------------------------------
-Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.956 s -- in org.assessment.controller.AssignmentControllerTest$DeleteAssignment
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.977 s -- in org.assessment.controller.AssignmentControllerTest$DeleteAssignment

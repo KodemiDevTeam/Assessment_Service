@@ -9,38 +9,37 @@ import software.amazon.awssdk.enhanced.dynamodb.Key;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Repository
 public class ReviewRepository {
 
     private final DynamoDbTable&lt;Review&gt; table;
 
-<span class="fc" id="L19">    public ReviewRepository(DynamoDbEnhancedClient enhancedClient) {</span>
+<span class="fc" id="L18">    public ReviewRepository(DynamoDbEnhancedClient enhancedClient) {</span>
         // Table name &quot;reviews&quot; and partition key &quot;reviewId&quot;
         // are defined directly in Review entity via @DynamoDbTableName and @DynamoDbPartitionKey
-<span class="fc" id="L22">        this.table = enhancedClient.table(&quot;reviews&quot;, TableSchema.fromBean(Review.class));</span>
-<span class="fc" id="L23">    }</span>
+<span class="fc" id="L21">        this.table = enhancedClient.table(&quot;reviews&quot;, TableSchema.fromBean(Review.class));</span>
+<span class="fc" id="L22">    }</span>
 
     public Review save(Review review) {
-<span class="fc" id="L26">        table.putItem(review);</span>
-<span class="fc" id="L27">        return review;</span>
+<span class="fc" id="L25">        table.putItem(review);</span>
+<span class="fc" id="L26">        return review;</span>
     }
 
     public Optional&lt;Review&gt; findById(String reviewId) {
-<span class="fc" id="L31">        return Optional.ofNullable(table.getItem(Key.builder().partitionValue(reviewId).build()));</span>
+<span class="fc" id="L30">        return Optional.ofNullable(table.getItem(Key.builder().partitionValue(reviewId).build()));</span>
     }
 
     public Optional&lt;Review&gt; findBySubmissionId(String submissionId) {
-<span class="fc" id="L35">        return table.scan().items().stream()</span>
-<span class="fc" id="L36">                .filter(r -&gt; submissionId.equals(r.getSubmissionId()))</span>
-<span class="fc" id="L37">                .findFirst();</span>
+<span class="fc" id="L34">        return table.scan().items().stream()</span>
+<span class="fc" id="L35">                .filter(r -&gt; submissionId.equals(r.getSubmissionId()))</span>
+<span class="fc" id="L36">                .findFirst();</span>
     }
 
     public List&lt;Review&gt; findByReviewerId(String reviewerId) {
-<span class="fc" id="L41">        return table.scan().items().stream()</span>
-<span class="fc" id="L42">                .filter(r -&gt; reviewerId.equals(r.getReviewerId()))</span>
-<span class="fc" id="L43">                .collect(Collectors.toList());</span>
+<span class="fc" id="L40">        return table.scan().items().stream()</span>
+<span class="fc" id="L41">                .filter(r -&gt; reviewerId.equals(r.getReviewerId()))</span>
+<span class="fc" id="L42">                .toList();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

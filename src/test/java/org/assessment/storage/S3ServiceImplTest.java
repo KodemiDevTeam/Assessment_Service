@@ -9,6 +9,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.Mockito.verify;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -221,66 +223,68 @@ class S3ServiceImplTest {
             doThrow(new RuntimeException("S3 error"))
                     .when(s3Client).deleteObject(any(DeleteObjectRequest.class));
 
-            s3Service.deleteFile("assignments/some-file.pdf");
-            // no exception expected — silently logs and continues
-        }
-    }
+            assertThatCode(() -> s3Service.deleteFile("assignments/some-file.pdf"))
+                    .doesNotThrowAnyException();
 
-    // -------------------------------------------------------------------------
-    // getFileUrl
-    // -------------------------------------------------------------------------
-    @Nested
-    @DisplayName("getFileUrl")
-    class GetFileUrl {
-
-        @Test
-        @DisplayName("should build full S3 URL from a plain key")
-        void getFileUrl_plainKey_buildsUrl() {
-            String url = s3Service.getFileUrl("assignments/uuid.pdf");
-
-            assertThat(url).isEqualTo(
-                    "https://test-bucket.s3.ap-south-1.amazonaws.com/assignments/uuid.pdf");
+            verify(s3Client).deleteObject(any(DeleteObjectRequest.class));
         }
 
-        @Test
-        @DisplayName("should return the URL unchanged when it already starts with https://")
-        void getFileUrl_alreadyHttps_returnsAsIs() {
-            String existing = "https://test-bucket.s3.ap-south-1.amazonaws.com/assignments/uuid.pdf";
+        // -------------------------------------------------------------------------
+        // getFileUrl
+        // -------------------------------------------------------------------------
+        @Nested
+        @DisplayName("getFileUrl")
+        class GetFileUrl {
 
-            String url = s3Service.getFileUrl(existing);
+            @Test
+            @DisplayName("should build full S3 URL from a plain key")
+            void getFileUrl_plainKey_buildsUrl() {
+                String url = s3Service.getFileUrl("assignments/uuid.pdf");
 
-            assertThat(url).isEqualTo(existing);
-        }
+                assertThat(url).isEqualTo(
+                        "https://test-bucket.s3.ap-south-1.amazonaws.com/assignments/uuid.pdf");
+            }
 
-        @Test
-        @DisplayName("should return the URL unchanged when it starts with http://")
-        void getFileUrl_alreadyHttp_returnsAsIs() {
-            String existing = "http://some-cdn.com/file.pdf";
+            @Test
+            @DisplayName("should return the URL unchanged when it already starts with https://")
+            void getFileUrl_alreadyHttps_returnsAsIs() {
+                String existing = "https://test-bucket.s3.ap-south-1.amazonaws.com/assignments/uuid.pdf";
 
-            String url = s3Service.getFileUrl(existing);
+                String url = s3Service.getFileUrl(existing);
 
-            assertThat(url).isEqualTo(existing);
-        }
+                assertThat(url).isEqualTo(existing);
+            }
 
-        @Test
-        @DisplayName("should return null when fileKey is null")
-        void getFileUrl_nullKey_returnsNull() {
-            assertThat(s3Service.getFileUrl(null)).isNull();
-        }
+            @Test
+            @DisplayName("should return the URL unchanged when it starts with http://")
+            void getFileUrl_alreadyHttp_returnsAsIs() {
+                String existing = "http://some-cdn.com/file.pdf";
 
-        @Test
-        @DisplayName("should return null when fileKey is blank")
-        void getFileUrl_blankKey_returnsNull() {
-            assertThat(s3Service.getFileUrl("   ")).isNull();
-        }
+                String url = s3Service.getFileUrl(existing);
 
-        @Test
-        @DisplayName("getFileUrl with folder-prefixed key should include folder in URL")
-        void getFileUrl_withFolderKey_includesFolderInUrl() {
-            String url = s3Service.getFileUrl("submissions/my-file.pdf");
+                assertThat(url).isEqualTo(existing);
+            }
 
-            assertThat(url).isEqualTo(
-                    "https://test-bucket.s3.ap-south-1.amazonaws.com/submissions/my-file.pdf");
+            @Test
+            @DisplayName("should return null when fileKey is null")
+            void getFileUrl_nullKey_returnsNull() {
+                assertThat(s3Service.getFileUrl(null)).isNull();
+            }
+
+            @Test
+            @DisplayName("should return null when fileKey is blank")
+            void getFileUrl_blankKey_returnsNull() {
+                assertThat(s3Service.getFileUrl("   ")).isNull();
+            }
+
+            @Test
+            @DisplayName("getFileUrl with folder-prefixed key should include folder in URL")
+            void getFileUrl_withFolderKey_includesFolderInUrl() {
+                String url = s3Service.getFileUrl("submissions/my-file.pdf");
+
+                assertThat(url).isEqualTo(
+                        "https://test-bucket.s3.ap-south-1.amazonaws.com/submissions/my-file.pdf");
+            }
         }
     }
 }

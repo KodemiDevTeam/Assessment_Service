@@ -23,11 +23,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-<span class="fc" id="L30">@Slf4j</span>
+<span class="fc" id="L29">@Slf4j</span>
 public class SubmissionServiceImpl implements SubmissionService {
 
     private final SubmissionRepository submissionRepository;
@@ -39,78 +38,78 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     @Override
     public SubmissionResponse submitAssignment(SubmitAssignmentRequest request, MultipartFile file) {
-<span class="fc" id="L42">        String studentId = CommonUtil.extractUserIdFromRequest();</span>
+<span class="fc" id="L41">        String studentId = CommonUtil.extractUserIdFromRequest();</span>
         
-<span class="fc" id="L44">        Assignment assignment = assignmentRepository.findById(request.getAssignmentId())</span>
-<span class="fc" id="L45">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Assignment not found with id: &quot; + request.getAssignmentId()));</span>
+<span class="fc" id="L43">        Assignment assignment = assignmentRepository.findById(request.getAssignmentId())</span>
+<span class="fc" id="L44">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Assignment not found with id: &quot; + request.getAssignmentId()));</span>
 
-<span class="fc bfc" id="L47" title="All 2 branches covered.">        if (assignment.getStatus() != AssignmentStatus.PUBLISHED) {</span>
-<span class="fc" id="L48">            throw new ValidationException(&quot;Assignment is not open for submissions&quot;);</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        if (assignment.getStatus() != AssignmentStatus.PUBLISHED) {</span>
+<span class="fc" id="L47">            throw new ValidationException(&quot;Assignment is not open for submissions&quot;);</span>
         }
 
         // Validate student enrollment via Feign
         try {
-<span class="fc" id="L53">            Boolean enrolled = enrollmentServiceClient.isEnrolled(Long.valueOf(studentId), Long.valueOf(assignment.getCourseId()));</span>
-<span class="fc bfc" id="L54" title="All 4 branches covered.">            if (enrolled == null || !enrolled) {</span>
-<span class="fc" id="L55">                throw new ValidationException(&quot;Student is not enrolled in course: &quot; + assignment.getCourseId());</span>
+<span class="fc" id="L52">            Boolean enrolled = enrollmentServiceClient.isEnrolled(Long.valueOf(studentId), Long.valueOf(assignment.getCourseId()));</span>
+<span class="fc bfc" id="L53" title="All 4 branches covered.">            if (enrolled == null || !enrolled) {</span>
+<span class="fc" id="L54">                throw new ValidationException(&quot;Student is not enrolled in course: &quot; + assignment.getCourseId());</span>
             }
-<span class="fc" id="L57">        } catch (NumberFormatException e) {</span>
-<span class="fc" id="L58">            throw new ValidationException(&quot;Invalid student or course ID format&quot;);</span>
-<span class="fc" id="L59">        } catch (Exception e) {</span>
-<span class="fc" id="L60">            log.warn(&quot;Failed to check enrollment via Feign&quot;, e);</span>
-<span class="fc" id="L61">            throw new ValidationException(&quot;Failed to validate student enrollment: &quot; + e.getMessage());</span>
-<span class="fc" id="L62">        }</span>
+<span class="fc" id="L56">        } catch (NumberFormatException e) {</span>
+<span class="fc" id="L57">            throw new ValidationException(&quot;Invalid student or course ID format&quot;);</span>
+<span class="fc" id="L58">        } catch (Exception e) {</span>
+<span class="fc" id="L59">            log.warn(&quot;Failed to check enrollment via Feign&quot;, e);</span>
+<span class="fc" id="L60">            throw new ValidationException(&quot;Failed to validate student enrollment: &quot; + e.getMessage());</span>
+<span class="fc" id="L61">        }</span>
 
-<span class="fc" id="L64">        submissionRepository.findByAssignmentIdAndLearnerId(request.getAssignmentId(), studentId)</span>
-<span class="fc" id="L65">                .ifPresent(s -&gt; {</span>
-<span class="fc" id="L66">                    throw new ValidationException(&quot;Already submitted for this assignment&quot;);</span>
+<span class="fc" id="L63">        submissionRepository.findByAssignmentIdAndLearnerId(request.getAssignmentId(), studentId)</span>
+<span class="fc" id="L64">                .ifPresent(s -&gt; {</span>
+<span class="fc" id="L65">                    throw new ValidationException(&quot;Already submitted for this assignment&quot;);</span>
                 });
 
-<span class="fc" id="L69">        Submission submission = submissionMapper.toEntity(request, studentId);</span>
+<span class="fc" id="L68">        Submission submission = submissionMapper.toEntity(request, studentId);</span>
 
-<span class="fc bfc" id="L71" title="All 6 branches covered.">        if (assignment.getAssignmentType() == AssignmentType.FILE_UPLOAD &amp;&amp; file != null &amp;&amp; !file.isEmpty()) {</span>
-<span class="fc" id="L72">            String fileUrl = s3Service.uploadFile(file, &quot;submissions&quot;);</span>
-<span class="fc" id="L73">            submission.setSubmissionFileUrl(fileUrl);</span>
+<span class="fc bfc" id="L70" title="All 6 branches covered.">        if (assignment.getAssignmentType() == AssignmentType.FILE_UPLOAD &amp;&amp; file != null &amp;&amp; !file.isEmpty()) {</span>
+<span class="fc" id="L71">            String fileUrl = s3Service.uploadFile(file, &quot;submissions&quot;);</span>
+<span class="fc" id="L72">            submission.setSubmissionFileUrl(fileUrl);</span>
         }
 
-<span class="fc" id="L76">        Submission saved = submissionRepository.save(submission);</span>
-<span class="fc" id="L77">        return submissionMapper.toResponse(saved);</span>
+<span class="fc" id="L75">        Submission saved = submissionRepository.save(submission);</span>
+<span class="fc" id="L76">        return submissionMapper.toResponse(saved);</span>
     }
 
     @Override
     public SubmissionResponse getSubmissionById(String id) {
-<span class="fc" id="L82">        Submission submission = submissionRepository.findById(id)</span>
-<span class="fc" id="L83">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Submission not found with id: &quot; + id));</span>
-<span class="fc" id="L84">        Review review = reviewRepository.findBySubmissionId(id).orElse(null);</span>
-<span class="fc" id="L85">        return submissionMapper.toResponse(submission, review);</span>
+<span class="fc" id="L81">        Submission submission = submissionRepository.findById(id)</span>
+<span class="fc" id="L82">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Submission not found with id: &quot; + id));</span>
+<span class="fc" id="L83">        Review review = reviewRepository.findBySubmissionId(id).orElse(null);</span>
+<span class="fc" id="L84">        return submissionMapper.toResponse(submission, review);</span>
     }
 
     @Override
     public List&lt;SubmissionResponse&gt; getSubmissionsByAssignment(String assignmentId) {
-<span class="fc" id="L90">        return submissionRepository.findByAssignmentId(assignmentId).stream()</span>
-<span class="fc" id="L91">                .map(s -&gt; {</span>
-<span class="fc" id="L92">                    Review review = reviewRepository.findBySubmissionId(s.getSubmissionId()).orElse(null);</span>
-<span class="fc" id="L93">                    return submissionMapper.toResponse(s, review);</span>
+<span class="fc" id="L89">        return submissionRepository.findByAssignmentId(assignmentId).stream()</span>
+<span class="fc" id="L90">                .map(s -&gt; {</span>
+<span class="fc" id="L91">                    Review review = reviewRepository.findBySubmissionId(s.getSubmissionId()).orElse(null);</span>
+<span class="fc" id="L92">                    return submissionMapper.toResponse(s, review);</span>
                 })
-<span class="fc" id="L95">                .collect(Collectors.toList());</span>
+<span class="fc" id="L94">                .toList();</span>
     }
 
     @Override
     public List&lt;SubmissionResponse&gt; getSubmissionsByStudent(String studentId) {
-<span class="fc" id="L100">        return submissionRepository.findByLearnerId(studentId).stream()</span>
-<span class="fc" id="L101">                .map(s -&gt; {</span>
-<span class="fc" id="L102">                    Review review = reviewRepository.findBySubmissionId(s.getSubmissionId()).orElse(null);</span>
-<span class="fc" id="L103">                    return submissionMapper.toResponse(s, review);</span>
+<span class="fc" id="L99">        return submissionRepository.findByLearnerId(studentId).stream()</span>
+<span class="fc" id="L100">                .map(s -&gt; {</span>
+<span class="fc" id="L101">                    Review review = reviewRepository.findBySubmissionId(s.getSubmissionId()).orElse(null);</span>
+<span class="fc" id="L102">                    return submissionMapper.toResponse(s, review);</span>
                 })
-<span class="fc" id="L105">                .collect(Collectors.toList());</span>
+<span class="fc" id="L104">                .toList();</span>
     }
 
     @Override
     public SubmissionResponse getSubmissionByAssignmentAndStudent(String assignmentId, String studentId) {
-<span class="fc" id="L110">        Submission submission = submissionRepository.findByAssignmentIdAndLearnerId(assignmentId, studentId)</span>
-<span class="fc" id="L111">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Submission not found&quot;));</span>
-<span class="fc" id="L112">        Review review = reviewRepository.findBySubmissionId(submission.getSubmissionId()).orElse(null);</span>
-<span class="fc" id="L113">        return submissionMapper.toResponse(submission, review);</span>
+<span class="fc" id="L109">        Submission submission = submissionRepository.findByAssignmentIdAndLearnerId(assignmentId, studentId)</span>
+<span class="fc" id="L110">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Submission not found&quot;));</span>
+<span class="fc" id="L111">        Review review = reviewRepository.findBySubmissionId(submission.getSubmissionId()).orElse(null);</span>
+<span class="fc" id="L112">        return submissionMapper.toResponse(submission, review);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

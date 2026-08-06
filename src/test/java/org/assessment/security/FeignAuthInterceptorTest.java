@@ -8,11 +8,16 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.Arguments;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.util.stream.Stream;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 @DisplayName("FeignAuthInterceptor Tests")
 class FeignAuthInterceptorTest {
@@ -45,8 +50,8 @@ class FeignAuthInterceptorTest {
         @ParameterizedTest(name = "forwards {0} header with value {1}")
         @CsvSource({
                 "Authorization, Bearer eyJhbGciOiJIUzI1NiJ9.test.sig",
-                "X-User-Id,     user-42",
-                "X-User-Role,   INSTRUCTOR"
+                "X-User-Id, user-42",
+                "X-User-Role, INSTRUCTOR"
         })
         @DisplayName("should forward each auth header to the Feign template")
         void forwardsHeader(String headerName, String headerValue) {
@@ -77,63 +82,31 @@ class FeignAuthInterceptorTest {
             assertThat(template.headers().get("X-User-Role")).contains("ADMIN");
         }
 
-        @Test
-        @DisplayName("should not add Authorization header when it is absent")
-        void doesNotAddAuthHeader_whenAbsent() {
+        @ParameterizedTest(name = "{index} => header={0}, value={1}")
+        @MethodSource("missingOrBlankHeaders")
+        @DisplayName("should not add header when it is missing or blank")
+        void shouldNotAddHeaderWhenMissingOrBlank(String headerName, String headerValue) {
+
             MockHttpServletRequest request = bindRequest();
-            request.addHeader("X-User-Id", "user-42");
+
+            if (headerValue != null) {
+                request.addHeader(headerName, headerValue);
+            }
 
             RequestTemplate template = new RequestTemplate();
             interceptor.apply(template);
 
-            assertThat(template.headers().get("Authorization")).isNullOrEmpty();
+            assertThat(template.headers().get(headerName)).isNullOrEmpty();
         }
 
-        @Test
-        @DisplayName("should not add X-User-Id header when it is blank")
-        void doesNotAddUserIdHeader_whenBlank() {
-            MockHttpServletRequest request = bindRequest();
-            request.addHeader("X-User-Id", "   ");
-
-            RequestTemplate template = new RequestTemplate();
-            interceptor.apply(template);
-
-            assertThat(template.headers().get("X-User-Id")).isNullOrEmpty();
-        }
-
-        @Test
-        @DisplayName("should not add Authorization header when it is blank")
-        void doesNotAddAuthHeader_whenBlank() {
-            MockHttpServletRequest request = bindRequest();
-            request.addHeader("Authorization", "   ");
-
-            RequestTemplate template = new RequestTemplate();
-            interceptor.apply(template);
-
-            assertThat(template.headers().get("Authorization")).isNullOrEmpty();
-        }
-
-        @Test
-        @DisplayName("should not add X-User-Role header when it is blank")
-        void doesNotAddUserRoleHeader_whenBlank() {
-            MockHttpServletRequest request = bindRequest();
-            request.addHeader("X-User-Role", "   ");
-
-            RequestTemplate template = new RequestTemplate();
-            interceptor.apply(template);
-
-            assertThat(template.headers().get("X-User-Role")).isNullOrEmpty();
-        }
-
-        @Test
-        @DisplayName("should not add X-User-Role header when it is absent")
-        void doesNotAddRoleHeader_whenAbsent() {
-            bindRequest();
-
-            RequestTemplate template = new RequestTemplate();
-            interceptor.apply(template);
-
-            assertThat(template.headers().get("X-User-Role")).isNullOrEmpty();
+        static Stream<Arguments> missingOrBlankHeaders() {
+            return Stream.of(
+                    arguments("Authorization", null),
+                    arguments("Authorization", "   "),
+                    arguments("X-User-Id", "   "),
+                    arguments("X-User-Role", "   "),
+                    arguments("X-User-Role", null)
+            );
         }
 
         @Test

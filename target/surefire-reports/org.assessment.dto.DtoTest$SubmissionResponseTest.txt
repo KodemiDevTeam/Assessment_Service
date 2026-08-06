@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: org.assessment.dto.DtoTest$SubmissionResponseTest
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in org.assessment.dto.DtoTest$SubmissionResponseTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.014 s -- in org.assessment.dto.DtoTest$SubmissionResponseTest

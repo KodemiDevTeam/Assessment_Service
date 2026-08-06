@@ -10,56 +10,55 @@ import software.amazon.awssdk.enhanced.dynamodb.Key;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Repository
 public class SubmissionRepository {
 
     private final DynamoDbTable&lt;Submission&gt; table;
 
-<span class="fc" id="L20">    public SubmissionRepository(DynamoDbEnhancedClient enhancedClient) {</span>
+<span class="fc" id="L19">    public SubmissionRepository(DynamoDbEnhancedClient enhancedClient) {</span>
         // Table name &quot;submissions&quot; and partition key &quot;submissionId&quot;
         // are defined directly in Submission entity via @DynamoDbTableName and @DynamoDbPartitionKey
-<span class="fc" id="L23">        this.table = enhancedClient.table(&quot;submissions&quot;, TableSchema.fromBean(Submission.class));</span>
-<span class="fc" id="L24">    }</span>
+<span class="fc" id="L22">        this.table = enhancedClient.table(&quot;submissions&quot;, TableSchema.fromBean(Submission.class));</span>
+<span class="fc" id="L23">    }</span>
 
     public Submission save(Submission submission) {
-<span class="fc" id="L27">        table.putItem(submission);</span>
-<span class="fc" id="L28">        return submission;</span>
+<span class="fc" id="L26">        table.putItem(submission);</span>
+<span class="fc" id="L27">        return submission;</span>
     }
 
     public Optional&lt;Submission&gt; findById(String submissionId) {
-<span class="fc" id="L32">        return Optional.ofNullable(table.getItem(Key.builder().partitionValue(submissionId).build()));</span>
+<span class="fc" id="L31">        return Optional.ofNullable(table.getItem(Key.builder().partitionValue(submissionId).build()));</span>
     }
 
     public List&lt;Submission&gt; findByAssignmentId(String assignmentId) {
-<span class="fc" id="L36">        return table.scan().items().stream()</span>
-<span class="fc" id="L37">                .filter(s -&gt; assignmentId.equals(s.getAssignmentId()))</span>
-<span class="fc" id="L38">                .collect(Collectors.toList());</span>
+<span class="fc" id="L35">        return table.scan().items().stream()</span>
+<span class="fc" id="L36">                .filter(s -&gt; assignmentId.equals(s.getAssignmentId()))</span>
+<span class="fc" id="L37">                .toList();</span>
     }
 
     public List&lt;Submission&gt; findByLearnerId(String learnerId) {
-<span class="fc" id="L42">        return table.scan().items().stream()</span>
-<span class="fc" id="L43">                .filter(s -&gt; learnerId.equals(s.getLearnerId()))</span>
-<span class="fc" id="L44">                .collect(Collectors.toList());</span>
+<span class="fc" id="L41">        return table.scan().items().stream()</span>
+<span class="fc" id="L42">                .filter(s -&gt; learnerId.equals(s.getLearnerId()))</span>
+<span class="fc" id="L43">                .toList();</span>
     }
 
     public Optional&lt;Submission&gt; findByAssignmentIdAndLearnerId(String assignmentId, String learnerId) {
-<span class="fc" id="L48">        return table.scan().items().stream()</span>
-<span class="fc bfc" id="L49" title="All 4 branches covered.">                .filter(s -&gt; assignmentId.equals(s.getAssignmentId()) &amp;&amp; learnerId.equals(s.getLearnerId()))</span>
-<span class="fc" id="L50">                .findFirst();</span>
+<span class="fc" id="L47">        return table.scan().items().stream()</span>
+<span class="fc bfc" id="L48" title="All 4 branches covered.">                .filter(s -&gt; assignmentId.equals(s.getAssignmentId()) &amp;&amp; learnerId.equals(s.getLearnerId()))</span>
+<span class="fc" id="L49">                .findFirst();</span>
     }
 
     public List&lt;Submission&gt; findByAssignmentIdAndStatus(String assignmentId, SubmissionStatus status) {
-<span class="fc" id="L54">        return table.scan().items().stream()</span>
-<span class="fc bfc" id="L55" title="All 4 branches covered.">                .filter(s -&gt; assignmentId.equals(s.getAssignmentId()) &amp;&amp; status == s.getStatus())</span>
-<span class="fc" id="L56">                .collect(Collectors.toList());</span>
+<span class="fc" id="L53">        return table.scan().items().stream()</span>
+<span class="fc bfc" id="L54" title="All 4 branches covered.">                .filter(s -&gt; assignmentId.equals(s.getAssignmentId()) &amp;&amp; status == s.getStatus())</span>
+<span class="fc" id="L55">                .toList();</span>
     }
 
     public long countByAssignmentId(String assignmentId) {
-<span class="fc" id="L60">        return table.scan().items().stream()</span>
-<span class="fc" id="L61">                .filter(s -&gt; assignmentId.equals(s.getAssignmentId()))</span>
-<span class="fc" id="L62">                .count();</span>
+<span class="fc" id="L59">        return table.scan().items().stream()</span>
+<span class="fc" id="L60">                .filter(s -&gt; assignmentId.equals(s.getAssignmentId()))</span>
+<span class="fc" id="L61">                .count();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

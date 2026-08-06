@@ -19,12 +19,13 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-<span class="fc" id="L26">@Slf4j</span>
+<span class="fc" id="L25">@Slf4j</span>
 public class AssignmentServiceImpl implements AssignmentService {
+
+    private static final String ASSIGNMENT_NOT_FOUND = &quot;Assignment not found with id: &quot;;
 
     private final AssignmentRepository assignmentRepository;
     private final AssignmentMapper assignmentMapper;
@@ -33,96 +34,95 @@ public class AssignmentServiceImpl implements AssignmentService {
 
     @Override
     public AssignmentResponse createAssignment(CreateAssignmentRequest request, MultipartFile file) {
-<span class="fc bfc" id="L36" title="All 4 branches covered.">        if (request.getCourseId() == null || request.getCourseId().isBlank()) {</span>
-<span class="fc" id="L37">            throw new ValidationException(&quot;Course ID must not be empty&quot;);</span>
+<span class="fc bfc" id="L37" title="All 4 branches covered.">        if (request.getCourseId() == null || request.getCourseId().isBlank()) {</span>
+<span class="fc" id="L38">            throw new ValidationException(&quot;Course ID must not be empty&quot;);</span>
         }
 
         try {
-<span class="fc" id="L41">            Boolean exists = courseServiceClient.courseExists(Long.valueOf(request.getCourseId()));</span>
-<span class="fc bfc" id="L42" title="All 4 branches covered.">            if (exists == null || !exists) {</span>
-<span class="fc" id="L43">                throw new ResourceNotFoundException(&quot;Course not found with id: &quot; + request.getCourseId());</span>
+<span class="fc" id="L42">            Boolean exists = courseServiceClient.courseExists(Long.valueOf(request.getCourseId()));</span>
+<span class="fc bfc" id="L43" title="All 4 branches covered.">            if (exists == null || !exists) {</span>
+<span class="fc" id="L44">                throw new ResourceNotFoundException(&quot;Course not found with id: &quot; + request.getCourseId());</span>
             }
-<span class="fc" id="L45">        } catch (NumberFormatException e) {</span>
-<span class="fc" id="L46">            throw new ValidationException(&quot;Invalid course ID format: &quot; + request.getCourseId());</span>
-<span class="fc" id="L47">        } catch (ResourceNotFoundException e) {</span>
-<span class="fc" id="L48">            throw e;</span>
-<span class="fc" id="L49">        } catch (Exception e) {</span>
-<span class="fc" id="L50">            log.warn(&quot;Failed to check course existence via Feign&quot;, e);</span>
-<span class="fc" id="L51">            throw new ValidationException(&quot;Failed to validate course existence: &quot; + e.getMessage());</span>
-<span class="fc" id="L52">        }</span>
+<span class="fc" id="L46">        } catch (NumberFormatException e) {</span>
+<span class="fc" id="L47">            throw new ValidationException(&quot;Invalid course ID format: &quot; + request.getCourseId());</span>
+<span class="fc" id="L48">        } catch (ResourceNotFoundException e) {</span>
+<span class="fc" id="L49">            throw e;</span>
+<span class="fc" id="L50">        } catch (Exception e) {</span>
+<span class="fc" id="L51">            log.warn(&quot;Failed to check course existence via Feign&quot;, e);</span>
+<span class="fc" id="L52">            throw new ValidationException(&quot;Failed to validate course existence: &quot; + e.getMessage());</span>
+<span class="fc" id="L53">        }</span>
 
-<span class="fc" id="L54">        String userId = CommonUtil.extractUserIdFromRequest();</span>
-<span class="fc" id="L55">        Assignment assignment = assignmentMapper.toEntity(request, userId);</span>
+<span class="fc" id="L55">        String userId = CommonUtil.extractUserIdFromRequest();</span>
+<span class="fc" id="L56">        Assignment assignment = assignmentMapper.toEntity(request, userId);</span>
 
-<span class="pc bpc" id="L57" title="1 of 4 branches missed.">        if (file != null &amp;&amp; !file.isEmpty()) {</span>
-<span class="fc" id="L58">            String fileUrl = s3Service.uploadFile(file, &quot;assignments&quot;);</span>
-<span class="fc" id="L59">            assignment.setAssignmentFileUrl(fileUrl);</span>
+<span class="pc bpc" id="L58" title="1 of 4 branches missed.">        if (file != null &amp;&amp; !file.isEmpty()) {</span>
+<span class="fc" id="L59">            String fileUrl = s3Service.uploadFile(file, &quot;assignments&quot;);</span>
+<span class="fc" id="L60">            assignment.setAssignmentFileUrl(fileUrl);</span>
         }
 
-<span class="fc" id="L62">        Assignment saved = assignmentRepository.save(assignment);</span>
-<span class="fc" id="L63">        return assignmentMapper.toResponse(saved);</span>
+<span class="fc" id="L63">        Assignment saved = assignmentRepository.save(assignment);</span>
+<span class="fc" id="L64">        return assignmentMapper.toResponse(saved);</span>
     }
 
     @Override
     public AssignmentResponse getAssignmentById(String assignmentId) {
-<span class="fc" id="L68">        Assignment assignment = assignmentRepository.findById(assignmentId)</span>
-<span class="fc" id="L69">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Assignment not found with id: &quot; + assignmentId));</span>
-<span class="fc" id="L70">        return assignmentMapper.toResponse(assignment);</span>
+<span class="fc" id="L69">        Assignment assignment = assignmentRepository.findById(assignmentId)</span>
+<span class="fc" id="L70">                .orElseThrow(() -&gt; new ResourceNotFoundException(ASSIGNMENT_NOT_FOUND + assignmentId));</span>
+<span class="fc" id="L71">        return assignmentMapper.toResponse(assignment);</span>
     }
 
     @Override
     public List&lt;AssignmentResponse&gt; getAllAssignments() {
-<span class="fc" id="L75">        return assignmentRepository.findAll().stream()</span>
-<span class="fc" id="L76">                .map(assignmentMapper::toResponse)</span>
-<span class="fc" id="L77">                .collect(Collectors.toList());</span>
+<span class="fc" id="L76">        return assignmentRepository.findAll().stream()</span>
+<span class="fc" id="L77">                .map(assignmentMapper::toResponse)</span>
+<span class="fc" id="L78">                .toList();</span>
     }
 
     @Override
     public List&lt;AssignmentResponse&gt; getAssignmentsByCourse(String courseId) {
-<span class="fc" id="L82">        return assignmentRepository.findByCourseId(courseId).stream()</span>
-<span class="fc" id="L83">                .map(assignmentMapper::toResponse)</span>
-<span class="fc" id="L84">                .collect(Collectors.toList());</span>
+<span class="fc" id="L83">        return assignmentRepository.findByCourseId(courseId).stream()</span>
+<span class="fc" id="L84">                .map(assignmentMapper::toResponse)</span>
+<span class="fc" id="L85">                .toList();</span>
     }
 
     @Override
     public List&lt;AssignmentResponse&gt; getAssignmentsByInstructor(String instructorId) {
-<span class="fc" id="L89">        return assignmentRepository.findByCreatedBy(instructorId).stream()</span>
-<span class="fc" id="L90">                .map(assignmentMapper::toResponse)</span>
-<span class="fc" id="L91">                .collect(Collectors.toList());</span>
+<span class="fc" id="L90">        return assignmentRepository.findByCreatedBy(instructorId).stream()</span>
+<span class="fc" id="L91">                .map(assignmentMapper::toResponse)</span>
+<span class="fc" id="L92">                .toList();</span>
     }
 
     @Override
     public AssignmentResponse updateAssignment(String assignmentId, UpdateAssignmentRequest request, MultipartFile file) {
-<span class="fc" id="L96">        Assignment assignment = assignmentRepository.findById(assignmentId)</span>
-<span class="fc" id="L97">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Assignment not found with id: &quot; + assignmentId));</span>
+<span class="fc" id="L97">        Assignment assignment = assignmentRepository.findById(assignmentId)</span>
+<span class="fc" id="L98">                .orElseThrow(() -&gt; new ResourceNotFoundException(ASSIGNMENT_NOT_FOUND + assignmentId));</span>
 
-<span class="fc bfc" id="L99" title="All 2 branches covered.">        if (request.getTitle() != null) {</span>
-<span class="fc" id="L100">            assignment.setTitle(request.getTitle());</span>
+<span class="fc bfc" id="L100" title="All 2 branches covered.">        if (request.getTitle() != null) {</span>
+<span class="fc" id="L101">            assignment.setTitle(request.getTitle());</span>
         }
-<span class="fc bfc" id="L102" title="All 2 branches covered.">        if (request.getDescription() != null) {</span>
-<span class="fc" id="L103">            assignment.setDescription(request.getDescription());</span>
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        if (request.getDescription() != null) {</span>
+<span class="fc" id="L104">            assignment.setDescription(request.getDescription());</span>
         }
-<span class="fc bfc" id="L105" title="All 2 branches covered.">        if (request.getAssignmentType() != null) {</span>
-<span class="fc" id="L106">            assignment.setAssignmentType(request.getAssignmentType());</span>
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        if (request.getAssignmentType() != null) {</span>
+<span class="fc" id="L107">            assignment.setAssignmentType(request.getAssignmentType());</span>
         }
-<span class="fc bfc" id="L108" title="All 2 branches covered.">        if (request.getDifficultyLevel() != null) {</span>
-<span class="fc" id="L109">            assignment.setDifficultyLevel(request.getDifficultyLevel());</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        if (request.getDifficultyLevel() != null) {</span>
+<span class="fc" id="L110">            assignment.setDifficultyLevel(request.getDifficultyLevel());</span>
         }
-<span class="fc bfc" id="L111" title="All 2 branches covered.">        if (request.getStatus() != null) {</span>
-<span class="fc" id="L112">            assignment.setStatus(request.getStatus());</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        if (request.getStatus() != null) {</span>
+<span class="fc" id="L113">            assignment.setStatus(request.getStatus());</span>
         }
-<span class="fc bfc" id="L114" title="All 2 branches covered.">        if (request.getTotalMarks() != null) {</span>
-<span class="fc" id="L115">            assignment.setTotalMarks(request.getTotalMarks());</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">        if (request.getTotalMarks() != null) {</span>
+<span class="fc" id="L116">            assignment.setTotalMarks(request.getTotalMarks());</span>
         }
-<span class="fc bfc" id="L117" title="All 2 branches covered.">        if (request.getPassMarks() != null) {</span>
-<span class="fc" id="L118">            assignment.setPassMarks(request.getPassMarks());</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        if (request.getPassMarks() != null) {</span>
+<span class="fc" id="L119">            assignment.setPassMarks(request.getPassMarks());</span>
         }
-<span class="fc bfc" id="L120" title="All 2 branches covered.">        if (request.getDueDate() != null) {</span>
-<span class="fc" id="L121">            assignment.setDueDate(request.getDueDate());</span>
+<span class="fc bfc" id="L121" title="All 2 branches covered.">        if (request.getDueDate() != null) {</span>
+<span class="fc" id="L122">            assignment.setDueDate(request.getDueDate());</span>
         }
 
-<span class="pc bpc" id="L124" title="1 of 4 branches missed.">        if (file != null &amp;&amp; !file.isEmpty()) {</span>
-            // Delete old file if exists
+<span class="pc bpc" id="L125" title="1 of 4 branches missed.">        if (file != null &amp;&amp; !file.isEmpty()) {</span>
 <span class="fc bfc" id="L126" title="All 2 branches covered.">            if (assignment.getAssignmentFileUrl() != null) {</span>
 <span class="fc" id="L127">                s3Service.deleteFile(assignment.getAssignmentFileUrl());</span>
             }
@@ -137,9 +137,10 @@ public class AssignmentServiceImpl implements AssignmentService {
 
     @Override
     public void deleteAssignment(String assignmentId) {
-<span class="fc" id="L140">        assignmentRepository.findById(assignmentId)</span>
-<span class="fc" id="L141">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Assignment not found with id: &quot; + assignmentId));</span>
-<span class="fc" id="L142">        assignmentRepository.deleteById(assignmentId);</span>
-<span class="fc" id="L143">    }</span>
+        // orElseThrow return value must be used — assign to variable to satisfy the check
+<span class="fc" id="L141">        Assignment assignment = assignmentRepository.findById(assignmentId)</span>
+<span class="fc" id="L142">                .orElseThrow(() -&gt; new ResourceNotFoundException(ASSIGNMENT_NOT_FOUND + assignmentId));</span>
+<span class="fc" id="L143">        assignmentRepository.deleteById(assignment.getAssignmentId());</span>
+<span class="fc" id="L144">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

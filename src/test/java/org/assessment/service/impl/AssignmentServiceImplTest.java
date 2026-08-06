@@ -34,7 +34,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -412,44 +411,47 @@ class AssignmentServiceImplTest {
         @Test
         @DisplayName("should throw ResourceNotFoundException when assignment not found")
         void updateAssignment_notFound() {
-            when(assignmentRepository.findById("missing")).thenReturn(Optional.empty());
+            when(assignmentRepository.findById("missing"))
+                    .thenReturn(Optional.empty());
+
+            UpdateAssignmentRequest request = new UpdateAssignmentRequest();
 
             assertThatThrownBy(() ->
-                    assignmentService.updateAssignment("missing", new UpdateAssignmentRequest(), null))
+                    assignmentService.updateAssignment("missing", request, null))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("Assignment not found with id: missing");
         }
-    }
 
-    // -------------------------------------------------------------------------
-    // deleteAssignment
-    // -------------------------------------------------------------------------
-    @Nested
-    @DisplayName("deleteAssignment")
-    class DeleteAssignment {
+        // -------------------------------------------------------------------------
+        // deleteAssignment
+        // -------------------------------------------------------------------------
+        @Nested
+        @DisplayName("deleteAssignment")
+        class DeleteAssignment {
 
-        @Test
-        @DisplayName("should delete assignment successfully")
-        void deleteAssignment_success() {
-            when(assignmentRepository.findById("assign-001")).thenReturn(Optional.of(sampleAssignment));
+            @Test
+            @DisplayName("should delete assignment successfully")
+            void deleteAssignment_success() {
+                when(assignmentRepository.findById("assign-001")).thenReturn(Optional.of(sampleAssignment));
 
-            assignmentService.deleteAssignment("assign-001");
+                assignmentService.deleteAssignment("assign-001");
 
-            verify(assignmentRepository).deleteById("assign-001");
-        }
+                verify(assignmentRepository).deleteById("assign-001");
+            }
 
-        @Test
-        @DisplayName("should throw ResourceNotFoundException when assignment not found")
-        void deleteAssignment_notFound() {
-            when(assignmentRepository.findById("missing")).thenReturn(Optional.empty());
+            @Test
+            @DisplayName("should throw ResourceNotFoundException when assignment not found")
+            void deleteAssignment_notFound() {
+                when(assignmentRepository.findById("missing")).thenReturn(Optional.empty());
 
-            // Extract the throwing call into a single-invocation lambda to satisfy Sonar jUnit rule
-            Runnable deleteCall = () -> assignmentService.deleteAssignment("missing");
+                // Extract the throwing call into a single-invocation lambda to satisfy Sonar JUnit rule
+                Runnable deleteCall = () -> assignmentService.deleteAssignment("missing");
 
-            assertThatThrownBy(deleteCall::run)
-                    .isInstanceOf(ResourceNotFoundException.class)
-                    .hasMessageContaining("Assignment not found with id: missing");
-            verify(assignmentRepository, never()).deleteById(anyString());
+                assertThatThrownBy(deleteCall::run)
+                        .isInstanceOf(ResourceNotFoundException.class)
+                        .hasMessageContaining("Assignment not found with id: missing");
+                verify(assignmentRepository, never()).deleteById(anyString());
+            }
         }
     }
 }

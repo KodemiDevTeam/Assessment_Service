@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,71 +32,71 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public ReviewResponse reviewSubmission(ReviewAssignmentRequest request) {
-<span class="fc" id="L36">        String reviewerId = CommonUtil.extractUserIdFromRequest();</span>
+<span class="fc" id="L35">        String reviewerId = CommonUtil.extractUserIdFromRequest();</span>
 
-<span class="fc" id="L38">        Submission submission = submissionRepository.findById(request.getSubmissionId())</span>
-<span class="fc" id="L39">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Submission not found with id: &quot; + request.getSubmissionId()));</span>
+<span class="fc" id="L37">        Submission submission = submissionRepository.findById(request.getSubmissionId())</span>
+<span class="fc" id="L38">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Submission not found with id: &quot; + request.getSubmissionId()));</span>
 
-<span class="fc" id="L41">        reviewRepository.findBySubmissionId(request.getSubmissionId())</span>
-<span class="fc" id="L42">                .ifPresent(r -&gt; {</span>
-<span class="fc" id="L43">                    throw new ValidationException(&quot;Submission already reviewed&quot;);</span>
+<span class="fc" id="L40">        reviewRepository.findBySubmissionId(request.getSubmissionId())</span>
+<span class="fc" id="L41">                .ifPresent(r -&gt; {</span>
+<span class="fc" id="L42">                    throw new ValidationException(&quot;Submission already reviewed&quot;);</span>
                 });
 
-<span class="fc" id="L46">        Assignment assignment = assignmentRepository.findById(submission.getAssignmentId())</span>
-<span class="fc" id="L47">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Assignment not found with id: &quot; + submission.getAssignmentId()));</span>
+<span class="fc" id="L45">        Assignment assignment = assignmentRepository.findById(submission.getAssignmentId())</span>
+<span class="fc" id="L46">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Assignment not found with id: &quot; + submission.getAssignmentId()));</span>
 
-<span class="fc" id="L49">        Review review = reviewMapper.toEntity(request, reviewerId);</span>
+<span class="fc" id="L48">        Review review = reviewMapper.toEntity(request, reviewerId);</span>
         
         // Calculate result status based on pass marks
-<span class="fc bfc" id="L52" title="All 2 branches covered.">        float passMarks = assignment.getPassMarks() != null ? assignment.getPassMarks() : 0f;</span>
-<span class="fc bfc" id="L53" title="All 2 branches covered.">        float marksAwarded = review.getMarksAwarded() != null ? review.getMarksAwarded() : 0f;</span>
-<span class="fc bfc" id="L54" title="All 2 branches covered.">        review.setResultStatus(marksAwarded &gt;= passMarks ? ResultStatus.PASS : ResultStatus.FAIL);</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        float passMarks = assignment.getPassMarks() != null ? assignment.getPassMarks() : 0f;</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        float marksAwarded = review.getMarksAwarded() != null ? review.getMarksAwarded() : 0f;</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        review.setResultStatus(marksAwarded &gt;= passMarks ? ResultStatus.PASS : ResultStatus.FAIL);</span>
         
-<span class="fc" id="L56">        Review savedReview = reviewRepository.save(review);</span>
+<span class="fc" id="L55">        Review savedReview = reviewRepository.save(review);</span>
 
-<span class="fc" id="L58">        submission.setStatus(SubmissionStatus.REVIEWED);</span>
-<span class="fc" id="L59">        submissionRepository.save(submission);</span>
+<span class="fc" id="L57">        submission.setStatus(SubmissionStatus.REVIEWED);</span>
+<span class="fc" id="L58">        submissionRepository.save(submission);</span>
 
-<span class="fc" id="L61">        return reviewMapper.toResponse(savedReview);</span>
+<span class="fc" id="L60">        return reviewMapper.toResponse(savedReview);</span>
     }
 
     @Override
     public ReviewResponse getReviewBySubmission(String submissionId) {
-<span class="fc" id="L66">        Review review = reviewRepository.findBySubmissionId(submissionId)</span>
-<span class="fc" id="L67">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Review not found for submission: &quot; + submissionId));</span>
-<span class="fc" id="L68">        return reviewMapper.toResponse(review);</span>
+<span class="fc" id="L65">        Review review = reviewRepository.findBySubmissionId(submissionId)</span>
+<span class="fc" id="L66">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Review not found for submission: &quot; + submissionId));</span>
+<span class="fc" id="L67">        return reviewMapper.toResponse(review);</span>
     }
 
     @Override
     public List&lt;ReviewResponse&gt; getReviewsByReviewer(String reviewerId) {
-<span class="fc" id="L73">        return reviewRepository.findByReviewerId(reviewerId).stream()</span>
-<span class="fc" id="L74">                .map(reviewMapper::toResponse)</span>
-<span class="fc" id="L75">                .collect(Collectors.toList());</span>
+<span class="fc" id="L72">        return reviewRepository.findByReviewerId(reviewerId).stream()</span>
+<span class="fc" id="L73">                .map(reviewMapper::toResponse)</span>
+<span class="fc" id="L74">                .toList();</span>
     }
 
     @Override
     public ReviewResponse updateReview(String reviewId, ReviewAssignmentRequest request) {
-<span class="fc" id="L80">        Review review = reviewRepository.findById(reviewId)</span>
-<span class="fc" id="L81">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Review not found with id: &quot; + reviewId));</span>
+<span class="fc" id="L79">        Review review = reviewRepository.findById(reviewId)</span>
+<span class="fc" id="L80">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Review not found with id: &quot; + reviewId));</span>
         
-<span class="fc" id="L83">        Submission submission = submissionRepository.findById(review.getSubmissionId())</span>
-<span class="fc" id="L84">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Submission not found for this review&quot;));</span>
+<span class="fc" id="L82">        Submission submission = submissionRepository.findById(review.getSubmissionId())</span>
+<span class="fc" id="L83">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Submission not found for this review&quot;));</span>
         
-<span class="fc" id="L86">        Assignment assignment = assignmentRepository.findById(submission.getAssignmentId())</span>
-<span class="fc" id="L87">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Assignment not found for this review&quot;));</span>
+<span class="fc" id="L85">        Assignment assignment = assignmentRepository.findById(submission.getAssignmentId())</span>
+<span class="fc" id="L86">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Assignment not found for this review&quot;));</span>
 
-<span class="fc bfc" id="L89" title="All 2 branches covered.">        if (request.getFeedback() != null) {</span>
-<span class="fc" id="L90">            review.setFeedback(request.getFeedback());</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        if (request.getFeedback() != null) {</span>
+<span class="fc" id="L89">            review.setFeedback(request.getFeedback());</span>
         }
-<span class="fc bfc" id="L92" title="All 2 branches covered.">        if (request.getMarksAwarded() != null) {</span>
-<span class="fc" id="L93">            review.setMarksAwarded(request.getMarksAwarded());</span>
-<span class="fc bfc" id="L94" title="All 2 branches covered.">            float passMarks = assignment.getPassMarks() != null ? assignment.getPassMarks() : 0f;</span>
-<span class="fc bfc" id="L95" title="All 2 branches covered.">            review.setResultStatus(review.getMarksAwarded() &gt;= passMarks ? ResultStatus.PASS : ResultStatus.FAIL);</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">        if (request.getMarksAwarded() != null) {</span>
+<span class="fc" id="L92">            review.setMarksAwarded(request.getMarksAwarded());</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">            float passMarks = assignment.getPassMarks() != null ? assignment.getPassMarks() : 0f;</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">            review.setResultStatus(review.getMarksAwarded() &gt;= passMarks ? ResultStatus.PASS : ResultStatus.FAIL);</span>
         }
-<span class="fc" id="L97">        review.setReviewedAt(LocalDateTime.now());</span>
+<span class="fc" id="L96">        review.setReviewedAt(LocalDateTime.now());</span>
 
-<span class="fc" id="L99">        Review savedReview = reviewRepository.save(review);</span>
-<span class="fc" id="L100">        return reviewMapper.toResponse(savedReview);</span>
+<span class="fc" id="L98">        Review savedReview = reviewRepository.save(review);</span>
+<span class="fc" id="L99">        return reviewMapper.toResponse(savedReview);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -50,6 +50,7 @@ org\assessment\util\ConstantsTest.class
 org\assessment\controller\AssignmentControllerTest$GetAllAssignments.class
 org\assessment\dto\DtoTest$DashboardResponseTest.class
 org\assessment\service\impl\StudentAssignmentServiceImplTest$GetAssignmentDetail.class
+org\assessment\storage\S3ServiceImplTest$DeleteFile$GetFileUrl.class
 org\assessment\enums\EnumsTest$AssignmentTypeTest.class
 org\assessment\exception\ErrorResponseTest$Builder.class
 org\assessment\exception\ExceptionClassesTest$FileUploadExceptionTest.class
@@ -61,7 +62,6 @@ org\assessment\enums\EnumsTest$SubmissionStatusTest.class
 org\assessment\entity\EntityTest$ReviewEntityTest.class
 org\assessment\repository\SubmissionRepositoryTest$FindByAssignmentIdAndStatus.class
 org\assessment\service\impl\SubmissionServiceImplTest$GetSubmissionsByStudent.class
-org\assessment\service\impl\AssignmentServiceImplTest$DeleteAssignment.class
 org\assessment\enums\EnumsTest$RoleTest.class
 org\assessment\exception\ErrorResponseTest$OfFactory.class
 org\assessment\controller\ReportControllerTest$ExportCsv.class
@@ -124,6 +124,7 @@ org\assessment\controller\AssignmentControllerTest.class
 org\assessment\dto\DtoTest$StudentAssignmentResponseTest.class
 org\assessment\enums\EnumsTest$ResultStatusTest.class
 org\assessment\repository\SubmissionRepositoryTest$Save.class
+org\assessment\service\impl\AssignmentServiceImplTest$UpdateAssignment$DeleteAssignment.class
 org\assessment\controller\SubmissionControllerTest$GetSubmissionById.class
 org\assessment\repository\AssignmentRepositoryTest$DeleteById.class
 org\assessment\util\CommonUtilTest.class
@@ -139,6 +140,7 @@ org\assessment\repository\ReviewRepositoryTest$FindById.class
 org\assessment\service\impl\ReportServiceImplTest.class
 org\assessment\entity\EntityTest$AssignmentTest.class
 org\assessment\service\impl\SubmissionServiceImplTest.class
+org\assessment\storage\FileUploadResponseTest$TestFileUploadResponse.class
 org\assessment\mapper\SubmissionMapperTest$ToResponseNoReview.class
 org\assessment\security\HeaderAuthFilterTest.class
 org\assessment\service\impl\AssignmentServiceImplTest$CreateAssignment.class
@@ -157,5 +159,4 @@ org\assessment\exception\GlobalExceptionHandlerTest$HandleResourceNotFound.class
 org\assessment\repository\SubmissionRepositoryTest$FindByAssignmentId.class
 org\assessment\controller\ReviewControllerTest$ReviewSubmission.class
 org\assessment\service\impl\StudentAssignmentServiceImplTest$ReviewDataMapping.class
-org\assessment\storage\S3ServiceImplTest$GetFileUrl.class
 org\assessment\controller\StudentAssignmentControllerTest$GetByStatus.class

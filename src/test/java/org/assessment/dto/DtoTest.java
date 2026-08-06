@@ -70,8 +70,9 @@ class DtoTest {
             r2.setTotalMarks(50f);
             r2.setPassMarks(25f);
 
-            assertThat(r1).isEqualTo(r2);
-            assertThat(r1).hasSameHashCodeAs(r2);
+            assertThat(r1)
+                    .isEqualTo(r2)
+                    .hasSameHashCodeAs(r2);
         }
     }
 
@@ -206,8 +207,9 @@ class DtoTest {
         void equalsAndHashCode() {
             AssignmentResponse r1 = AssignmentResponse.builder().assignmentId("a1").title("T").build();
             AssignmentResponse r2 = AssignmentResponse.builder().assignmentId("a1").title("T").build();
-            assertThat(r1).isEqualTo(r2);
-            assertThat(r1).hasSameHashCodeAs(r2);
+            assertThat(r1)
+                    .isEqualTo(r2)
+                    .hasSameHashCodeAs(r2);
         }
     }
 

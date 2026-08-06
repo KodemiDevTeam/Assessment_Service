@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: org.assessment.service.impl.DashboardServiceImplTest$GetStudentDashboard
 -------------------------------------------------------------------------------
-Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.070 s -- in org.assessment.service.impl.DashboardServiceImplTest$GetStudentDashboard
+Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.078 s -- in org.assessment.service.impl.DashboardServiceImplTest$GetStudentDashboard

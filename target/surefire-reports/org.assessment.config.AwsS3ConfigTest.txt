@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: org.assessment.config.AwsS3ConfigTest
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.884 s -- in org.assessment.config.AwsS3ConfigTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.605 s -- in org.assessment.config.AwsS3ConfigTest
