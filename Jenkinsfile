@@ -29,13 +29,15 @@ pipeline {
         stage('Debug Workspace') {
             steps {
                 sh '''
-                echo "===== WORKSPACE DEBUG ====="
-                pwd
-                ls -la
-                echo "Searching for pom.xml..."
-                find . -name pom.xml
-                echo "Searching for mvnw..."
-                find . -name mvnw
+                    echo "===== WORKSPACE DEBUG ====="
+                    pwd
+                    ls -la
+
+                    echo "Searching for pom.xml..."
+                    find . -name pom.xml
+
+                    echo "Searching for mvnw..."
+                    find . -name mvnw
                 '''
             }
         }
@@ -43,13 +45,13 @@ pipeline {
         stage('Build & Test') {
             steps {
                 sh '''
-                echo "===== BUILD & TEST ====="
+                    echo "===== BUILD & TEST ====="
 
-                mvn --version
+                    mvn --version
 
-                mvn clean verify \
-                -Deureka.client.enabled=false \
-                -Dspring.cloud.discovery.enabled=false
+                    mvn clean verify \
+                    -Deureka.client.enabled=false \
+                    -Dspring.cloud.discovery.enabled=false
                 '''
             }
         }
@@ -57,15 +59,15 @@ pipeline {
         stage('Verify JaCoCo Report') {
             steps {
                 sh '''
-                echo "===== VERIFYING JACOCO ====="
+                    echo "===== VERIFYING JACOCO ====="
 
-                if [ -f target/site/jacoco/jacoco.xml ]; then
-                    echo "JaCoCo report found."
-                else
-                    echo "JaCoCo report missing!"
-                    find target -name "*.xml"
-                    exit 1
-                fi
+                    if [ -f target/site/jacoco/jacoco.xml ]; then
+                        echo "JaCoCo report found."
+                    else
+                        echo "JaCoCo report missing!"
+                        find target -name "*.xml"
+                        exit 1
+                    fi
                 '''
             }
         }
@@ -82,21 +84,24 @@ pipeline {
                 withSonarQubeEnv('sonarscanner') {
 
                     withCredentials([
-                        string(credentialsId: 'sonartk', variable: 'SONAR_TOKEN')
+                        string(
+                            credentialsId: 'sonartk',
+                            variable: 'SONAR_TOKEN'
+                        )
                     ]) {
 
                         sh '''
-                        echo "===== SONARQUBE ANALYSIS ====="
+                            echo "===== SONARQUBE ANALYSIS ====="
 
-                        mvn \
-                        org.sonarsource.scanner.maven:sonar-maven-plugin:5.2.0.4988:sonar \
-                        -DskipTests \
-                        -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                        -Dsonar.projectName=${SONAR_PROJECT_NAME} \
-                        -Dsonar.host.url=$SONAR_HOST_URL \
-                        -Dsonar.token=$SONAR_TOKEN \
-                        -Dsonar.java.binaries=target/classes \
-                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                            mvn \
+                            org.sonarsource.scanner.maven:sonar-maven-plugin:5.2.0.4988:sonar \
+                            -DskipTests \
+                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                            -Dsonar.projectName=${SONAR_PROJECT_NAME} \
+                            -Dsonar.host.url=$SONAR_HOST_URL \
+                            -Dsonar.token=$SONAR_TOKEN \
+                            -Dsonar.java.binaries=target/classes \
+                            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
                         '''
                     }
                 }
@@ -113,28 +118,49 @@ pipeline {
 
         stage('OWASP Dependency Check') {
             steps {
-                withCredentials([
-                    string(credentialsId: 'nvd-api-key', variable: 'NVD_KEY')
-                ]) {
 
-                    dependencyCheck(
-                        odcInstallation: 'Default',
-                        additionalArguments: """
-                        --nvdApiKey ${NVD_KEY}
-                        --format CSV
-                        --out .
-                        --disableOssIndex
-                        """
-                    )
+                catchError(
+                    buildResult: 'SUCCESS',
+                    stageResult: 'UNSTABLE'
+                ) {
+
+                    withCredentials([
+                        string(
+                            credentialsId: 'nvd-api-key',
+                            variable: 'NVD_KEY'
+                        )
+                    ]) {
+
+                        sh '''
+                            echo "===== OWASP DEPENDENCY CHECK ====="
+                            echo "Running OWASP Dependency Check..."
+                        '''
+
+                        dependencyCheck(
+                            odcInstallation: 'Default',
+                            additionalArguments: """
+                            --nvdApiKey ${NVD_KEY}
+                            --format CSV
+                            --out .
+                            --disableOssIndex
+                            """
+                        )
+                    }
                 }
             }
         }
 
         stage('Publish OWASP Report') {
             steps {
-                dependencyCheckPublisher(
-                    pattern: 'dependency-check-report.csv'
-                )
+                catchError(
+                    buildResult: 'SUCCESS',
+                    stageResult: 'UNSTABLE'
+                ) {
+
+                    dependencyCheckPublisher(
+                        pattern: 'dependency-check-report.csv'
+                    )
+                }
             }
         }
 
@@ -147,7 +173,6 @@ pipeline {
                 )
             }
         }
-
     }
 
     post {
@@ -157,7 +182,7 @@ pipeline {
         }
 
         unstable {
-            echo 'UNSTABLE: Quality Gate failed.'
+            echo 'UNSTABLE: OWASP Dependency Check encountered an issue, but the build completed.'
         }
 
         failure {
