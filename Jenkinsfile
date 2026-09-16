@@ -64,10 +64,10 @@ pipeline {
             }
         }
 
-        stage('Build & Test') {
+        stage('Build and Test') {
             steps {
                 bat '''
-                    echo ===== BUILD & TEST =====
+                    echo ===== BUILD AND TEST =====
 
                     mvn --version
 
@@ -105,7 +105,7 @@ pipeline {
 
                     withCredentials([
                         string(
-                            credentialsId: 'sonartk',
+                            credentialsId: 'sonar-token',
                             variable: 'SONAR_TOKEN'
                         )
                     ]) {
