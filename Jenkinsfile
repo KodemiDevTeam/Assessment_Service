@@ -5,6 +5,7 @@ pipeline {
     options {
         disableConcurrentBuilds()
         timeout(time: 1, unit: 'HOURS')
+        skipDefaultCheckout(true)
     }
 
     environment {
@@ -31,13 +32,34 @@ pipeline {
                 bat '''
                     echo ===== WORKSPACE DEBUG =====
                     cd
+
+                    echo.
+                    echo ===== DIRECTORY =====
                     dir
 
-                    echo Searching for pom.xml...
-                    dir /s /b pom.xml
+                    echo.
+                    echo ===== POM FILES =====
+                    dir /s /b pom.xml || echo No pom.xml found
 
-                    echo Searching for mvnw...
-                    dir /s /b mvnw || echo Maven Wrapper not found - using system Maven
+                    echo.
+                    echo ===== MAVEN WRAPPER =====
+                    if exist mvnw (
+                        echo Maven Wrapper found
+                    ) else (
+                        echo Maven Wrapper not found - using system Maven
+                    )
+
+                    echo.
+                    echo ===== JAVA VERSION =====
+                    java -version
+
+                    echo.
+                    echo ===== MAVEN VERSION =====
+                    mvn -version
+
+                    echo.
+                    echo ===== DEBUG COMPLETE =====
+                    exit /b 0
                 '''
             }
         }
@@ -142,6 +164,7 @@ pipeline {
 
         stage('Publish OWASP Report') {
             steps {
+
                 catchError(
                     buildResult: 'SUCCESS',
                     stageResult: 'UNSTABLE'
