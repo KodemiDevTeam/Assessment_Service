@@ -37,7 +37,7 @@ pipeline {
                     dir /s /b pom.xml
 
                     echo Searching for mvnw...
-                    dir /s /b mvnw
+                    dir /s /b mvnw || echo Maven Wrapper not found - using system Maven
                 '''
             }
         }
