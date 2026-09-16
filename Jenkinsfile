@@ -28,46 +28,44 @@ pipeline {
 
         stage('Debug Workspace') {
             steps {
-                sh '''
-                    echo "===== WORKSPACE DEBUG ====="
-                    pwd
-                    ls -la
+                bat '''
+                    echo ===== WORKSPACE DEBUG =====
+                    cd
+                    dir
 
-                    echo "Searching for pom.xml..."
-                    find . -name pom.xml
+                    echo Searching for pom.xml...
+                    dir /s /b pom.xml
 
-                    echo "Searching for mvnw..."
-                    find . -name mvnw
+                    echo Searching for mvnw...
+                    dir /s /b mvnw
                 '''
             }
         }
 
         stage('Build & Test') {
             steps {
-                sh '''
-                    echo "===== BUILD & TEST ====="
+                bat '''
+                    echo ===== BUILD & TEST =====
 
                     mvn --version
 
-                    mvn clean verify \
-                    -Deureka.client.enabled=false \
-                    -Dspring.cloud.discovery.enabled=false
+                    mvn clean verify -Deureka.client.enabled=false -Dspring.cloud.discovery.enabled=false
                 '''
             }
         }
 
         stage('Verify JaCoCo Report') {
             steps {
-                sh '''
-                    echo "===== VERIFYING JACOCO ====="
+                bat '''
+                    echo ===== VERIFYING JACOCO =====
 
-                    if [ -f target/site/jacoco/jacoco.xml ]; then
-                        echo "JaCoCo report found."
-                    else
-                        echo "JaCoCo report missing!"
-                        find target -name "*.xml"
-                        exit 1
-                    fi
+                    if exist target\\site\\jacoco\\jacoco.xml (
+                        echo JaCoCo report found.
+                    ) else (
+                        echo JaCoCo report missing!
+                        dir /s /b target\\*.xml
+                        exit /b 1
+                    )
                 '''
             }
         }
@@ -90,18 +88,10 @@ pipeline {
                         )
                     ]) {
 
-                        sh '''
-                            echo "===== SONARQUBE ANALYSIS ====="
+                        bat '''
+                            echo ===== SONARQUBE ANALYSIS =====
 
-                            mvn \
-                            org.sonarsource.scanner.maven:sonar-maven-plugin:5.2.0.4988:sonar \
-                            -DskipTests \
-                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                            -Dsonar.projectName=${SONAR_PROJECT_NAME} \
-                            -Dsonar.host.url=$SONAR_HOST_URL \
-                            -Dsonar.token=$SONAR_TOKEN \
-                            -Dsonar.java.binaries=target/classes \
-                            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                            mvn org.sonarsource.scanner.maven:sonar-maven-plugin:5.2.0.4988:sonar -DskipTests -Dsonar.projectKey=%SONAR_PROJECT_KEY% -Dsonar.projectName=%SONAR_PROJECT_NAME% -Dsonar.host.url=%SONAR_HOST_URL% -Dsonar.token=%SONAR_TOKEN% -Dsonar.java.binaries=target/classes -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
                         '''
                     }
                 }
@@ -131,9 +121,9 @@ pipeline {
                         )
                     ]) {
 
-                        sh '''
-                            echo "===== OWASP DEPENDENCY CHECK ====="
-                            echo "Running OWASP Dependency Check..."
+                        bat '''
+                            echo ===== OWASP DEPENDENCY CHECK =====
+                            echo Running OWASP Dependency Check...
                         '''
 
                         dependencyCheck(
