@@ -101,7 +101,7 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('sonarscanner') {
+                withSonarQubeEnv('SonarQube2') {
 
                     withCredentials([
                         string(
