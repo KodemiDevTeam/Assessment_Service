@@ -1,5 +1,4 @@
 pipeline {
-
     agent any
 
     options {
@@ -9,8 +8,8 @@ pipeline {
     }
 
     environment {
-        SONAR_PROJECT_KEY  = "Assessment_Service_Dev"
-        SONAR_PROJECT_NAME = "Assessment_Service_Dev"
+        SONAR_PROJECT_KEY  = 'Assessment_Service_Dev'
+        SONAR_PROJECT_NAME = 'Assessment_Service_Dev'
     }
 
     stages {
@@ -42,24 +41,12 @@ pipeline {
                     dir /s /b pom.xml || echo No pom.xml found
 
                     echo.
-                    echo ===== MAVEN WRAPPER =====
-                    if exist mvnw (
-                        echo Maven Wrapper found
-                    ) else (
-                        echo Maven Wrapper not found - using system Maven
-                    )
-
-                    echo.
                     echo ===== JAVA VERSION =====
                     java -version
 
                     echo.
                     echo ===== MAVEN VERSION =====
                     mvn -version
-
-                    echo.
-                    echo ===== DEBUG COMPLETE =====
-                    exit /b 0
                 '''
             }
         }
@@ -68,8 +55,6 @@ pipeline {
             steps {
                 bat '''
                     echo ===== BUILD AND TEST =====
-
-                    mvn --version
 
                     mvn clean verify -Deureka.client.enabled=false -Dspring.cloud.discovery.enabled=false
                 '''
@@ -94,22 +79,22 @@ pipeline {
 
         stage('Publish Test Results') {
             steps {
-                junit allowEmptyResults: true,
-                      testResults: '**/target/surefire-reports/*.xml'
+                junit(
+                    allowEmptyResults: true,
+                    testResults: '**/target/surefire-reports/*.xml'
+                )
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube2') {
-
                     withCredentials([
                         string(
                             credentialsId: 'sonar-token',
                             variable: 'SONAR_TOKEN'
                         )
                     ]) {
-
                         bat '''
                             echo ===== SONARQUBE ANALYSIS =====
 
@@ -130,31 +115,23 @@ pipeline {
 
         stage('OWASP Dependency Check') {
             steps {
-
                 catchError(
                     buildResult: 'SUCCESS',
                     stageResult: 'UNSTABLE'
                 ) {
-
                     withCredentials([
                         string(
                             credentialsId: 'nvd-api-key',
                             variable: 'NVD_KEY'
                         )
                     ]) {
-
-                        bat '''
-                            echo ===== OWASP DEPENDENCY CHECK =====
-                            echo Running OWASP Dependency Check...
-                        '''
-
                         dependencyCheck(
                             odcInstallation: 'Default',
                             additionalArguments: """
-                            --nvdApiKey ${NVD_KEY}
-                            --format CSV
-                            --out .
-                            --disableOssIndex
+                                --nvdApiKey ${NVD_KEY}
+                                --format CSV
+                                --out .
+                                --disableOssIndex
                             """
                         )
                     }
@@ -164,12 +141,10 @@ pipeline {
 
         stage('Publish OWASP Report') {
             steps {
-
                 catchError(
                     buildResult: 'SUCCESS',
                     stageResult: 'UNSTABLE'
                 ) {
-
                     dependencyCheckPublisher(
                         pattern: 'dependency-check-report.csv'
                     )
@@ -189,7 +164,6 @@ pipeline {
     }
 
     post {
-
         success {
             echo 'SUCCESS: Assessment Service Build + Sonar + OWASP completed successfully.'
         }
