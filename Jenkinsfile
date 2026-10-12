@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -21,49 +22,66 @@ pipeline {
         }
 
         stage('Checkout') {
+            options {
+                timeout(time: 7, unit: 'MINUTES')
+            }
             steps {
-                checkout([
-                    $class: 'GitSCM',
-                    branches: scm.branches,
-                    doGenerateSubmoduleConfigurations: false,
-                    extensions: [
-                        [$class: 'CloneOption',
-                         shallow: true,
-                         depth: 1,
-                         noTags: true,
-                         honorRefspec: true,
-                         timeout: 20]
-                    ],
-                    userRemoteConfigs: [[
-                        credentialsId: 'githubtoken',
-                        url: 'https://github.com/KodemiDevTeam/Assessment_Service.git',
-                        refspec: '+refs/heads/*:refs/remotes/origin/*'
-                    ]]
-                ])
+                script {
+                    // Prefer the multibranch job's current branch.
+                    // For a regular Pipeline job, use its configured SCM branch.
+                    def branchName = env.BRANCH_NAME ?:
+                        (scm.branches?.getAt(0)?.name
+                            ?.replaceFirst(/^\*\//, '') ?: 'main')
+
+                    echo "Checkout started: ${new Date()}"
+                    echo "Target branch: ${branchName}"
+
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: [[name: "*/${branchName}"]],
+                        doGenerateSubmoduleConfigurations: false,
+                        extensions: [
+                            [$class: 'CloneOption',
+                             shallow: true,
+                             depth: 1,
+                             noTags: true,
+                             honorRefspec: true,
+                             timeout: 5]
+                        ],
+                        userRemoteConfigs: [[
+                            credentialsId: 'githubtoken',
+                            url: 'https://github.com/KodemiDevTeam/Assessment_Service.git',
+                            refspec: "+refs/heads/${branchName}:refs/remotes/origin/${branchName}"
+                        ]]
+                    ])
+
+                    echo "Checkout completed: ${new Date()}"
+                }
             }
         }
 
         stage('Debug Workspace') {
             steps {
                 sh '''
+                    set -eu
+
                     echo "===== WORKSPACE DEBUG ====="
                     pwd
 
-                    echo
                     echo "===== DIRECTORY ====="
                     ls -la
 
-                    echo
                     echo "===== POM FILES ====="
-                    find . -name "pom.xml"
+                    find . -name "pom.xml" -print
 
-                    echo
                     echo "===== JAVA VERSION ====="
                     java -version
 
-                    echo
                     echo "===== MAVEN VERSION ====="
                     mvn -version
+
+                    echo "===== GIT COMMIT ====="
+                    git log -1 --oneline
                 '''
             }
         }
@@ -71,6 +89,8 @@ pipeline {
         stage('Build and Test') {
             steps {
                 sh '''
+                    set -eu
+
                     echo "===== BUILD AND TEST ====="
 
                     mvn clean verify \
@@ -83,6 +103,8 @@ pipeline {
         stage('Verify JaCoCo Report') {
             steps {
                 sh '''
+                    set -eu
+
                     echo "===== VERIFYING JACOCO ====="
 
                     if [ -f target/site/jacoco/jacoco.xml ]; then
@@ -90,7 +112,7 @@ pipeline {
                         ls -lh target/site/jacoco/jacoco.xml
                     else
                         echo "JaCoCo report missing!"
-                        find target -name "*.xml" 2>/dev/null || true
+                        find target -name "*.xml" -print 2>/dev/null || true
                         exit 1
                     fi
                 '''
@@ -106,6 +128,7 @@ pipeline {
             }
         }
 
+        // OWASP scan runs before SonarQube analysis and Quality Gate.
         stage('OWASP Dependency Check') {
             steps {
                 catchError(
@@ -124,7 +147,7 @@ pipeline {
                             odcInstallation: 'Default',
                             additionalArguments: """
                                 --nvdApiKey ${NVD_KEY}
-                                --format CSV
+                                --format ALL
                                 --out .
                                 --disableOssIndex
                             """
@@ -140,9 +163,18 @@ pipeline {
                     buildResult: 'SUCCESS',
                     stageResult: 'UNSTABLE'
                 ) {
-                    dependencyCheckPublisher(
-                        pattern: 'dependency-check-report.xml'
-                    )
+                    script {
+                        if (fileExists('dependency-check-report.xml')) {
+                            dependencyCheckPublisher(
+                                pattern: 'dependency-check-report.xml'
+                            )
+                        } else {
+                            error(
+                                'OWASP XML report not found. ' +
+                                'Check the Dependency-Check console output.'
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -157,6 +189,8 @@ pipeline {
                         )
                     ]) {
                         sh '''
+                            set -eu
+
                             echo "===== SONARQUBE ANALYSIS ====="
 
                             mvn \
@@ -199,7 +233,7 @@ pipeline {
         }
 
         unstable {
-            echo 'UNSTABLE: Check OWASP Dependency Check and test results.'
+            echo 'UNSTABLE: Check OWASP Dependency Check, report publishing, and test results.'
         }
 
         failure {
