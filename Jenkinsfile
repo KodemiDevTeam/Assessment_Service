@@ -156,7 +156,7 @@ pipeline {
                         echo '===== RUNNING OWASP DEPENDENCY CHECK ====='
 
                         dependencyCheck(
-                            odcInstallation: 'Default',
+                            odcInstallation: 'OWASP',
                             additionalArguments: """
                                 --nvdApiKey ${NVD_KEY}
                                 --format ALL
