@@ -1,4 +1,3 @@
-
 pipeline {
     agent any
 
@@ -47,20 +46,22 @@ pipeline {
         stage('Debug Workspace') {
             steps {
                 sh '''
-                    set -e
-
                     echo "===== WORKSPACE DEBUG ====="
                     pwd
 
+                    echo
                     echo "===== DIRECTORY ====="
                     ls -la
 
+                    echo
                     echo "===== POM FILES ====="
-                    find . -name pom.xml -type f -print
+                    find . -name "pom.xml"
 
+                    echo
                     echo "===== JAVA VERSION ====="
                     java -version
 
+                    echo
                     echo "===== MAVEN VERSION ====="
                     mvn -version
                 '''
@@ -70,8 +71,6 @@ pipeline {
         stage('Build and Test') {
             steps {
                 sh '''
-                    set -e
-
                     echo "===== BUILD AND TEST ====="
 
                     mvn clean verify \
@@ -84,15 +83,14 @@ pipeline {
         stage('Verify JaCoCo Report') {
             steps {
                 sh '''
-                    set -e
-
                     echo "===== VERIFYING JACOCO ====="
 
                     if [ -f target/site/jacoco/jacoco.xml ]; then
                         echo "JaCoCo report found."
+                        ls -lh target/site/jacoco/jacoco.xml
                     else
                         echo "JaCoCo report missing!"
-                        find . -path '*/target/*.xml' -type f -print
+                        find target -name "*.xml" 2>/dev/null || true
                         exit 1
                     fi
                 '''
@@ -108,42 +106,6 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('SonarQube2') {
-                    withCredentials([
-                        string(
-                            credentialsId: 'sonar-token',
-                            variable: 'SONAR_TOKEN'
-                        )
-                    ]) {
-                        sh '''
-                            set -e
-
-                            echo "===== SONARQUBE ANALYSIS ====="
-
-                            mvn org.sonarsource.scanner.maven:sonar-maven-plugin:5.2.0.4988:sonar \
-                                -DskipTests \
-                                -Dsonar.projectKey="$SONAR_PROJECT_KEY" \
-                                -Dsonar.projectName="$SONAR_PROJECT_NAME" \
-                                -Dsonar.host.url="$SONAR_HOST_URL" \
-                                -Dsonar.token="$SONAR_TOKEN" \
-                                -Dsonar.java.binaries=target/classes \
-                                -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 10, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: false
-                }
-            }
-        }
-
         stage('OWASP Dependency Check') {
             steps {
                 catchError(
@@ -156,6 +118,8 @@ pipeline {
                             variable: 'NVD_KEY'
                         )
                     ]) {
+                        echo '===== RUNNING OWASP DEPENDENCY CHECK ====='
+
                         dependencyCheck(
                             odcInstallation: 'Default',
                             additionalArguments: """
@@ -177,8 +141,43 @@ pipeline {
                     stageResult: 'UNSTABLE'
                 ) {
                     dependencyCheckPublisher(
-                        pattern: 'dependency-check-report.csv'
+                        pattern: 'dependency-check-report.xml'
                     )
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube2') {
+                    withCredentials([
+                        string(
+                            credentialsId: 'sonar-token',
+                            variable: 'SONAR_TOKEN'
+                        )
+                    ]) {
+                        sh '''
+                            echo "===== SONARQUBE ANALYSIS ====="
+
+                            mvn \
+                                org.sonarsource.scanner.maven:sonar-maven-plugin:5.2.0.4988:sonar \
+                                -DskipTests \
+                                -Dsonar.projectKey="${SONAR_PROJECT_KEY}" \
+                                -Dsonar.projectName="${SONAR_PROJECT_NAME}" \
+                                -Dsonar.host.url="${SONAR_HOST_URL}" \
+                                -Dsonar.token="${SONAR_TOKEN}" \
+                                -Dsonar.java.binaries=target/classes \
+                                -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 10, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: false
                 }
             }
         }
@@ -186,7 +185,7 @@ pipeline {
         stage('Archive Reports') {
             steps {
                 archiveArtifacts(
-                    artifacts: 'dependency-check-report.csv,target/site/jacoco/**,target/surefire-reports/**',
+                    artifacts: 'dependency-check-report.csv,dependency-check-report.xml,target/site/jacoco/**,target/surefire-reports/**',
                     fingerprint: true,
                     allowEmptyArchive: true
                 )
@@ -196,11 +195,11 @@ pipeline {
 
     post {
         success {
-            echo 'SUCCESS: Assessment Service Build + Sonar + OWASP completed successfully.'
+            echo 'SUCCESS: Assessment Service Build + Tests + OWASP + SonarQube completed.'
         }
 
         unstable {
-            echo 'UNSTABLE: OWASP Dependency Check encountered an issue, but the build completed.'
+            echo 'UNSTABLE: Check OWASP Dependency Check and test results.'
         }
 
         failure {
@@ -208,8 +207,8 @@ pipeline {
         }
 
         always {
-            echo 'Pipeline execution finished.'
             cleanWs()
+            echo 'Pipeline execution finished.'
         }
     }
 }
