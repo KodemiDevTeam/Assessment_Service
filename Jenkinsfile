@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -45,24 +46,22 @@ pipeline {
 
         stage('Debug Workspace') {
             steps {
-                bat '''
-                    echo ===== WORKSPACE DEBUG =====
-                    cd
+                sh '''
+                    set -e
 
-                    echo.
-                    echo ===== DIRECTORY =====
-                    dir
+                    echo "===== WORKSPACE DEBUG ====="
+                    pwd
 
-                    echo.
-                    echo ===== POM FILES =====
-                    dir /s /b pom.xml || echo No pom.xml found
+                    echo "===== DIRECTORY ====="
+                    ls -la
 
-                    echo.
-                    echo ===== JAVA VERSION =====
+                    echo "===== POM FILES ====="
+                    find . -name pom.xml -type f -print
+
+                    echo "===== JAVA VERSION ====="
                     java -version
 
-                    echo.
-                    echo ===== MAVEN VERSION =====
+                    echo "===== MAVEN VERSION ====="
                     mvn -version
                 '''
             }
@@ -70,25 +69,32 @@ pipeline {
 
         stage('Build and Test') {
             steps {
-                bat '''
-                    echo ===== BUILD AND TEST =====
-                    mvn clean verify -Deureka.client.enabled=false -Dspring.cloud.discovery.enabled=false
+                sh '''
+                    set -e
+
+                    echo "===== BUILD AND TEST ====="
+
+                    mvn clean verify \
+                        -Deureka.client.enabled=false \
+                        -Dspring.cloud.discovery.enabled=false
                 '''
             }
         }
 
         stage('Verify JaCoCo Report') {
             steps {
-                bat '''
-                    echo ===== VERIFYING JACOCO =====
+                sh '''
+                    set -e
 
-                    if exist target\\site\\jacoco\\jacoco.xml (
-                        echo JaCoCo report found.
-                    ) else (
-                        echo JaCoCo report missing!
-                        dir /s /b target\\*.xml
-                        exit /b 1
-                    )
+                    echo "===== VERIFYING JACOCO ====="
+
+                    if [ -f target/site/jacoco/jacoco.xml ]; then
+                        echo "JaCoCo report found."
+                    else
+                        echo "JaCoCo report missing!"
+                        find . -path '*/target/*.xml' -type f -print
+                        exit 1
+                    fi
                 '''
             }
         }
@@ -111,10 +117,19 @@ pipeline {
                             variable: 'SONAR_TOKEN'
                         )
                     ]) {
-                        bat '''
-                            echo ===== SONARQUBE ANALYSIS =====
+                        sh '''
+                            set -e
 
-                            mvn org.sonarsource.scanner.maven:sonar-maven-plugin:5.2.0.4988:sonar -DskipTests -Dsonar.projectKey=%SONAR_PROJECT_KEY% -Dsonar.projectName=%SONAR_PROJECT_NAME% -Dsonar.host.url=%SONAR_HOST_URL% -Dsonar.token=%SONAR_TOKEN% -Dsonar.java.binaries=target/classes -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                            echo "===== SONARQUBE ANALYSIS ====="
+
+                            mvn org.sonarsource.scanner.maven:sonar-maven-plugin:5.2.0.4988:sonar \
+                                -DskipTests \
+                                -Dsonar.projectKey="$SONAR_PROJECT_KEY" \
+                                -Dsonar.projectName="$SONAR_PROJECT_NAME" \
+                                -Dsonar.host.url="$SONAR_HOST_URL" \
+                                -Dsonar.token="$SONAR_TOKEN" \
+                                -Dsonar.java.binaries=target/classes \
+                                -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
                         '''
                     }
                 }
@@ -193,8 +208,8 @@ pipeline {
         }
 
         always {
-            cleanWs()
             echo 'Pipeline execution finished.'
+            cleanWs()
         }
     }
 }
