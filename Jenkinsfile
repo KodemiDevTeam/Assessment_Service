@@ -22,7 +22,24 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                checkout scm
+                checkout([
+                    $class: 'GitSCM',
+                    branches: scm.branches,
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: [
+                        [$class: 'CloneOption',
+                         shallow: true,
+                         depth: 1,
+                         noTags: true,
+                         honorRefspec: true,
+                         timeout: 20]
+                    ],
+                    userRemoteConfigs: [[
+                        credentialsId: 'githubtoken',
+                        url: 'https://github.com/KodemiDevTeam/Assessment_Service.git',
+                        refspec: '+refs/heads/*:refs/remotes/origin/*'
+                    ]]
+                ])
             }
         }
 
@@ -55,7 +72,6 @@ pipeline {
             steps {
                 bat '''
                     echo ===== BUILD AND TEST =====
-
                     mvn clean verify -Deureka.client.enabled=false -Dspring.cloud.discovery.enabled=false
                 '''
             }
