@@ -2,6 +2,10 @@
 pipeline {
     agent any
 
+    tools {
+        maven 'Maven'
+    }
+
     options {
         disableConcurrentBuilds()
         timeout(time: 1, unit: 'HOURS')
@@ -27,8 +31,6 @@ pipeline {
             }
             steps {
                 script {
-                    // Prefer the multibranch job's current branch.
-                    // For a regular Pipeline job, use its configured SCM branch.
                     def branchName = env.BRANCH_NAME ?:
                         (scm.branches?.getAt(0)?.name
                             ?.replaceFirst(/^\*\//, '') ?: 'main')
@@ -67,8 +69,6 @@ pipeline {
 
                     echo "===== WORKSPACE DEBUG ====="
                     pwd
-
-                    echo "===== DIRECTORY ====="
                     ls -la
 
                     echo "===== POM FILES ====="
@@ -82,20 +82,33 @@ pipeline {
 
                     echo "===== GIT COMMIT ====="
                     git log -1 --oneline
+
+                    echo "===== ROOT POM CHECK ====="
+                    test -f pom.xml || {
+                        echo "ERROR: Root pom.xml not found"
+                        exit 1
+                    }
                 '''
             }
         }
 
         stage('Build and Test') {
+            options {
+                timeout(time: 25, unit: 'MINUTES')
+            }
             steps {
                 sh '''
                     set -eu
 
                     echo "===== BUILD AND TEST ====="
+                    date
 
-                    mvn clean verify \
+                    mvn -B -ntp clean verify \
                         -Deureka.client.enabled=false \
                         -Dspring.cloud.discovery.enabled=false
+
+                    echo "===== BUILD COMPLETED ====="
+                    date
                 '''
             }
         }
@@ -128,7 +141,6 @@ pipeline {
             }
         }
 
-        // OWASP scan runs before SonarQube analysis and Quality Gate.
         stage('OWASP Dependency Check') {
             steps {
                 catchError(
@@ -150,7 +162,7 @@ pipeline {
                                 --format ALL
                                 --out .
                                 --disableOssIndex
-                            """
+                            """.stripIndent().trim()
                         )
                     }
                 }
@@ -169,10 +181,7 @@ pipeline {
                                 pattern: 'dependency-check-report.xml'
                             )
                         } else {
-                            error(
-                                'OWASP XML report not found. ' +
-                                'Check the Dependency-Check console output.'
-                            )
+                            error('OWASP XML report not found.')
                         }
                     }
                 }
@@ -193,7 +202,7 @@ pipeline {
 
                             echo "===== SONARQUBE ANALYSIS ====="
 
-                            mvn \
+                            mvn -B -ntp \
                                 org.sonarsource.scanner.maven:sonar-maven-plugin:5.2.0.4988:sonar \
                                 -DskipTests \
                                 -Dsonar.projectKey="${SONAR_PROJECT_KEY}" \
@@ -233,7 +242,7 @@ pipeline {
         }
 
         unstable {
-            echo 'UNSTABLE: Check OWASP Dependency Check, report publishing, and test results.'
+            echo 'UNSTABLE: Check OWASP Dependency Check and report publishing.'
         }
 
         failure {
